@@ -249,7 +249,7 @@ class util:
 
 
 if __name__ == "__main__":
-    #update_linux_vanilla()
-    #update_linux_addon_linux_firmware()
+    update_linux_vanilla()
+    update_linux_addon_linux_firmware()
     update_linux_addon_virtualbox_modules()
-    #update_linux_addon_wireless_regdb()
+    update_linux_addon_wireless_regdb()

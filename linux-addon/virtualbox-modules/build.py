@@ -14,3 +14,7 @@ subprocess.run("/bin/tar -xJf %s" % (os.path.join(srcDir, fnList[0])), shell=Tru
 
 subprocess.run("/usr/bin/make KERN_VER=%s" % (kernelVer), shell=True)
 subprocess.run("/usr/bin/make install KERN_VER=%s" % (kernelVer), shell=True)
+
+
+
+
