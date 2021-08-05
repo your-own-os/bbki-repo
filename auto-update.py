@@ -20,7 +20,7 @@ def update_linux_vanilla():
     # get latest kernel version from internet
     kernelVersion = None
     if True:
-        root = util.fetchAndParseHtmlPage("https://www.kernel.org")
+        root = util.fetchAndParseHtmlPage(myName, "https://www.kernel.org")
         td = root.xpath(".//td[text()='%s:']" % ("stable"))[0]
         td = td.getnext()
         while len(td) > 0:
@@ -66,6 +66,35 @@ def update_linux_vanilla():
 
     # rename bbki file
     targetFile = os.path.join(myName, "%s.bbki" % (kernelVersion))
+    util.renameTo(os.path.join(selfDir, targetFile))
+
+    # change SRC_URI
+    util.sed(targetFile, "SRC_URI=.*", "SRC_URI=\"%s\"" % (remoteFile))
+
+    # print result
+    print("%s: %s updated." % (myName, targetFile))
+
+
+def update_linux_addon_linux_firmware():
+    myName = "linux-addon/linux-firmware"
+    selfDir = os.path.dirname(os.path.realpath(__file__))
+    firmwareUrl = "https://www.kernel.org/pub/linux/kernel/firmware"
+
+    # get firmware version version from internet
+    firmwareVersion = None
+    remoteFile = None
+    if True:
+        root = util.fetchAndParseHtmlPage(myName, firmwareUrl)
+        for atag in root.xpath(".//a"):
+            m = re.fullmatch("linux-firmware-(.*)\\.tar\\.xz", atag.text)
+            if m is not None:
+                if firmwareVersion is None or firmwareVersion < m.group(1):
+                    firmwareVersion = m.group(1)
+                    remoteFile = atag.href
+        assert firmwareVersion is not None
+
+    # rename bbki file
+    targetFile = os.path.join(myName, "%s.bbki" % (firmwareVersion))
     util.renameTo(os.path.join(selfDir, targetFile))
 
     # change SRC_URI
@@ -124,3 +153,4 @@ class util:
 
 if __name__ == "__main__":
     update_linux_vanilla()
+    update_linux_addon_linux_firmware()
