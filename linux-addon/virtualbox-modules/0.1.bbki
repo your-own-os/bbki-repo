@@ -1,0 +1,14 @@
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
+
+DESCRIPTION="Kernel Modules for Virtualbox"
+HOMEPAGE="https://www.virtualbox.org/"
+SRC_URI_GIT="https://github.com/cdemu/cdemu"
+
+addon_build() {
+    make KERNELRELEASE=${KVER}
+}
+
+addon_install() {
+    make install KERNELRELEASE=${KVER}
+}

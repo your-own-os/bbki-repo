@@ -131,6 +131,35 @@ def update_linux_addon_wireless_regdb():
     print("%s: %s updated." % (myName, targetFile))
 
 
+def update_linux_addon_virtualbox_modules():
+    myName = "linux-addon/virtualbox-modules"
+    selfDir = os.path.dirname(os.path.realpath(__file__))
+    url = "https://dev.gentoo.org/~polynomial-c/virtualbox"
+
+    # get version from internet
+    ver = None
+    remoteFile = None
+    if True:
+        root = util.fetchAndParseHtmlPage(myName, url)
+        for atag in root.xpath(".//a"):
+            m = re.fullmatch("vbox-kernel-module-src-[0-9\.]+\.tar\.xz", atag.text)
+            if m is not None:
+                if ver is None or ver < m.group(1):
+                    ver = m.group(1)
+                    remoteFile = os.path.join(url, atag.get("href"))
+        assert ver is not None
+
+    # rename bbki file
+    targetFile = os.path.join(myName, "%s.bbki" % ver)
+    util.renameTo(os.path.join(selfDir, targetFile))
+
+    # change SRC_URI
+    util.sed(targetFile, "SRC_URI=.*", "SRC_URI=\"%s\"" % (remoteFile))
+
+    # print result
+    print("%s: %s updated." % (myName, targetFile))
+
+
 class util:
 
     @staticmethod
@@ -190,4 +219,5 @@ class util:
 if __name__ == "__main__":
     #update_linux_vanilla()
     #update_linux_addon_linux_firmware()
-    update_linux_addon_wireless_regdb()
+    update_linux_addon_virtualbox_modules
+    #update_linux_addon_wireless_regdb()
