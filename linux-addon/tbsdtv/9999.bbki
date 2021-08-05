@@ -1,6 +1,65 @@
-[source]
-update-method = exec
-executable = update.py
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
 
-[extra-module]
-builder = build.py
+DESCRIPTION="TBS linux open source drivers"
+HOMEPAGE="https://github.com/tbsdtv/linux-media/wiki"
+
+src_fetch() {
+    if [ -e "./media_build/.git] ; then
+        /usr/libexec/robust_layer/git pull -C ./media_build
+    else
+        rm -rf ./media_build
+        /usr/libexec/robust_layer/git clone https://github.com/tbsdtv/media_build ./media_build
+    fi
+
+    if [ -e "./linux_media/.git] ; then
+        /usr/libexec/robust_layer/git pull -C ./linux_media
+    else
+        rm -rf ./linux_media
+        /usr/libexec/robust_layer/git clone https://github.com/tbsdtv/linux_media ./linux_media
+    fi
+}
+
+addon_build() {
+    # make KERNELRELEASE=${KVER}
+}
+
+addon_install() {
+    # make install KERNELRELEASE=${KVER}
+}
+
+
+
+#!/usr/bin/python3
+# -*- coding: utf-8; tab-width: 4; indent-tabs-mode: t -*-
+
+# import sys
+# import json
+
+# # extract tbs driver
+# tbsLinuxMediaDir = os.path.join(FmConst.kcacheDir, "linux_media")
+# tbsMediaBuildDir = os.path.join(self.tbsdtvTmpDir, "media_build")
+# if True:
+#     srcdir = os.path.join(FmConst.kcacheDir, "media_build")
+#     os.makedirs(tbsMediaBuildDir)
+#     FmUtil.shellCall("/bin/cp -r %s/* %s" % (srcdir, tbsMediaBuildDir))
+
+# # prepare kernel source directory
+# self._makeAuxillary(self.realSrcDir, "prepare")
+
+# # do make operation
+# t = []
+# for i in range(0, tbsMediaBuildDir.count("/")):
+#     t.append("..")
+# t = "/".join(t)
+# self._makeAuxillary(tbsMediaBuildDir, "dir", ["DIR=\"%s%s\"" % (t, tbsLinuxMediaDir)])     # DIR must be a path relative to tbsMediaBuildDir
+
+# self._makeAuxillary(tbsMediaBuildDir, "allmodconfig", ["KERNELRELEASE=%s" % (self.kernelVer)])
+
+# self._makeMain(tbsMediaBuildDir, ["KERNELRELEASE=%s" % (self.kernelVer)])
+
+# self._makeAuxillary(tbsMediaBuildDir, "install")
+
+# fn = "signature.tbs-%s" % (self.dstTarget.postfix)
+# with open(os.path.join(_bootDir, fn), "w") as f:
+#     f.write(FmUtil.hashDir(tbsLinuxMediaDir))
