@@ -142,15 +142,15 @@ def update_linux_addon_virtualbox_modules():
     if True:
         root = util.fetchAndParseHtmlPage(myName, url)
         for atag in root.xpath(".//a"):
-            m = re.fullmatch("vbox-kernel-module-src-[0-9\.]+\.tar\.xz", atag.text)
+            m = re.fullmatch("vbox-kernel-module-src-([0-9\.]+)\.tar\.xz", atag.text)
             if m is not None:
-                if ver is None or ver < m.group(1):
+                if ver is None or util.compareVersion(ver, m.group(1)) < 0:
                     ver = m.group(1)
                     remoteFile = os.path.join(url, atag.get("href"))
         assert ver is not None
 
     # rename bbki file
-    targetFile = os.path.join(myName, "%s.bbki" % ver)
+    targetFile = os.path.join(myName, "%s.bbki" % (ver))
     util.renameTo(os.path.join(selfDir, targetFile))
 
     # change SRC_URI
@@ -169,7 +169,7 @@ class util:
                 return resp.read()
         except OSError as e:
             print("Failed to acces %s, %s" % (url, e))
-            time.sleep(robust_layer.RETRY_TIMEOUT)
+            time.sleep(robust_layer.RETRY_WAIT)
 
     @staticmethod
     def fetchAndParseHtmlPage(myName, url):
@@ -186,7 +186,7 @@ class util:
                     return lxml.html.parse(fakef)
             except OSError as e:
                 print("%s: Failed to acces %s, %s" % (myName, url, e))
-                time.sleep(robust_layer.RETRY_TIMEOUT)
+                time.sleep(robust_layer.RETRY_WAIT)
 
     @staticmethod
     def renameTo(targetFile):
@@ -215,9 +215,41 @@ class util:
         with open(fn, "w") as f:
             f.write(buf)
 
+    @staticmethod
+    def compareVersion(verstr1, verstr2):
+        """eg: 3.9.11-gentoo-r1 or 3.10.7-gentoo"""
+
+        partList1 = verstr1.split("-")
+        partList2 = verstr2.split("-")
+
+        verList1 = partList1[0].split(".")
+        verList2 = partList2[0].split(".")
+        assert len(verList1) == 3 and len(verList2) == 3
+
+        ver1 = int(verList1[0]) * 10000 + int(verList1[1]) * 100 + int(verList1[2])
+        ver2 = int(verList2[0]) * 10000 + int(verList2[1]) * 100 + int(verList2[2])
+        if ver1 > ver2:
+            return 1
+        elif ver1 < ver2:
+            return -1
+
+        if len(partList1) >= 2 and len(partList2) == 1:
+            return 1
+        elif len(partList1) == 1 and len(partList2) >= 2:
+            return -1
+
+        p1 = "-".join(partList1[1:])
+        p2 = "-".join(partList2[1:])
+        if p1 > p2:
+            return 1
+        elif p1 < p2:
+            return -1
+
+        return 0
+
 
 if __name__ == "__main__":
     #update_linux_vanilla()
     #update_linux_addon_linux_firmware()
-    update_linux_addon_virtualbox_modules
+    update_linux_addon_virtualbox_modules()
     #update_linux_addon_wireless_regdb()
