@@ -1,7 +1,14 @@
-[source]
-name = cdemu
-update-method = git
-url = https://github.com/cdemu/cdemu
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
 
-[extra-module]
-builder = build.py
+DESCRIPTION="Virtual (SCSI) Host Bus Adapter kernel module for the CDEmu suite"
+HOMEPAGE="https://cdemu.sourceforge.io/"
+SRC_URI_GIT="https://github.com/cdemu/cdemu"
+
+addon_build() {
+    make KERNELRELEASE=${KVER}
+}
+
+addon_install() {
+    make install KERNELRELEASE=${KVER}
+}
