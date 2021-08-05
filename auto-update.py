@@ -19,29 +19,13 @@ def update_linux_vanilla():
 
     # get latest kernel version from internet
     kernelVersion = None
-    while True:
-        kernelUrl = "https://www.kernel.org"
-        typename = "stable"
-        try:
-            with urllib.request.urlopen(kernelUrl, timeout=robust_layer.TIMEOUT) as resp:
-                if resp.info().get('Content-Encoding') is None:
-                    fakef = resp
-                elif resp.info().get('Content-Encoding') == 'gzip':
-                    fakef = io.BytesIO(resp.read())
-                    fakef = gzip.GzipFile(fileobj=fakef)
-                else:
-                    assert False
-                root = lxml.html.parse(fakef)
-
-                td = root.xpath(".//td[text()='%s:']" % (typename))[0]
-                td = td.getnext()
-                while len(td) > 0:
-                    td = td[0]
-                kernelVersion = td.text
-                break
-        except OSError as e:
-            print("%s: Failed to acces %s, %s" % (myName, kernelUrl, e))
-            time.sleep(robust_layer.RETRY_TIMEOUT)
+    if True:
+        root = util.fetchAndParseHtmlPage("https://www.kernel.org")
+        td = root.xpath(".//td[text()='%s:']" % ("stable"))[0]
+        td = td.getnext()
+        while len(td) > 0:
+            td = td[0]
+        kernelVersion = td.text
 
     # get remote file
     remoteFile = None
@@ -92,6 +76,23 @@ def update_linux_vanilla():
 
 
 class util:
+
+    @staticmethod
+    def fetchAndParseHtmlPage(myName, url):
+        while True:
+            try:
+                with urllib.request.urlopen(url, timeout=robust_layer.TIMEOUT) as resp:
+                    if resp.info().get('Content-Encoding') is None:
+                        fakef = resp
+                    elif resp.info().get('Content-Encoding') == 'gzip':
+                        fakef = io.BytesIO(resp.read())
+                        fakef = gzip.GzipFile(fileobj=fakef)
+                    else:
+                        assert False
+                    return lxml.html.parse(fakef)
+            except OSError as e:
+                print("%s: Failed to acces %s, %s" % (myName, url, e))
+                time.sleep(robust_layer.RETRY_TIMEOUT)
 
     @staticmethod
     def renameTo(targetFile):
