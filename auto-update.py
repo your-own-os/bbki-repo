@@ -90,7 +90,7 @@ def update_linux_addon_linux_firmware():
             if m is not None:
                 if firmwareVersion is None or firmwareVersion < m.group(1):
                     firmwareVersion = m.group(1)
-                    remoteFile = atag.href
+                    remoteFile = os.path.join(firmwareUrl, atag.get("href"))
         assert firmwareVersion is not None
 
     # rename bbki file
@@ -152,5 +152,5 @@ class util:
 
 
 if __name__ == "__main__":
-    update_linux_vanilla()
+    #update_linux_vanilla()
     update_linux_addon_linux_firmware()

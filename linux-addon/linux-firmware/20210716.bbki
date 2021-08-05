@@ -1,0 +1,14 @@
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
+
+DESCRIPTION="Linux firmware files"
+HOMEPAGE="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git"
+SRC_URI="https://www.kernel.org/pub/linux/kernel/firmware/linux-firmware-20210716.tar.xz"
+
+src_extract() {
+    tar -xJf ${A} --strip 1
+}
+
+fw_install() {
+    inst_firmware *
+}
