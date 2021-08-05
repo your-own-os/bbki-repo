@@ -104,7 +104,43 @@ def update_linux_addon_linux_firmware():
     print("%s: %s updated." % (myName, targetFile))
 
 
+def update_linux_addon_wireless_regdb():
+    myName = "linux-addon/wireless-regdb"
+    selfDir = os.path.dirname(os.path.realpath(__file__))
+    wirelessRegDbDirUrl = "https://www.kernel.org/pub/software/network/wireless-regdb"
+
+    # get wireless-regdb from internet
+    firmwareVersion = None
+    remoteFile = None
+    if True:
+        out = util.fetchHtmlBinaryData(myName, wirelessRegDbDirUrl).decode("iso8859-1")
+        for m in re.finditer("wireless-regdb-([0-9]+\\.[0-9]+\\.[0-9]+)\\.tar\\.xz", out, re.M):
+            if firmwareVersion is None or m.group(1) > firmwareVersion:
+                firmwareVersion = m.group(1)
+                remoteFile = os.path.join(wirelessRegDbDirUrl, "wireless-regdb-%s.tar.xz" % firmwareVersion)
+        assert firmwareVersion is not None
+
+    # rename bbki file
+    targetFile = os.path.join(myName, "%s.bbki" % (firmwareVersion))
+    util.renameTo(os.path.join(selfDir, targetFile))
+
+    # change SRC_URI
+    util.sed(targetFile, "SRC_URI=.*", "SRC_URI=\"%s\"" % (remoteFile))
+
+    # print result
+    print("%s: %s updated." % (myName, targetFile))
+
+
 class util:
+
+    @staticmethod
+    def fetchHtmlBinaryData(myName, url):
+        try:
+            with urllib.request.urlopen(url, timeout=robust_layer.TIMEOUT) as resp:
+                return resp.read()
+        except OSError as e:
+            print("Failed to acces %s, %s" % (url, e))
+            time.sleep(robust_layer.RETRY_TIMEOUT)
 
     @staticmethod
     def fetchAndParseHtmlPage(myName, url):
@@ -153,4 +189,5 @@ class util:
 
 if __name__ == "__main__":
     #update_linux_vanilla()
-    update_linux_addon_linux_firmware()
+    #update_linux_addon_linux_firmware()
+    update_linux_addon_wireless_regdb()

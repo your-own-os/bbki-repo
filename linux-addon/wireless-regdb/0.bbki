@@ -1,7 +1,0 @@
-[source]
-update-method = exec
-executable = https://github.com/Umio-Yasuno/unofficial-amdgpu-firmware-repo
-
-[data-files]
-regex = true
-.* = $0
