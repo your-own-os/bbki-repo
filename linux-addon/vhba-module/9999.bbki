@@ -6,9 +6,11 @@ HOMEPAGE="https://cdemu.sourceforge.io/"
 SRC_URI_GIT="https://github.com/cdemu/cdemu"
 
 addon_build() {
+    cd ./vhba-module
     make KERNELRELEASE=${KVER}
 }
 
 addon_install() {
+    cd ./vhba-module
     make install KERNELRELEASE=${KVER}
 }

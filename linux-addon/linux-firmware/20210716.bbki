@@ -10,5 +10,5 @@ src_extract() {
 }
 
 addon_install() {
-    inst_firmware *
+    inst_firmware **
 }
