@@ -1,10 +1,9 @@
-[source]
-name = tbs-tuner
-update-method = http-archive
-url = http://www.tbsdtv.com/download/document/linux/tbs-tuner-firmwares_v1.0.tar.bz2
-local-name = 
-comment = "from https://github.com/tbsdtv/linux_media/wiki"
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
 
-[firmware-files]
-regex = true
-.* = $0
+DESCRIPTION="Firmware for TBS tuner?"
+HOMEPAGE="https://github.com/tbsdtv/linux_media/wiki"
+SRC_URI="http://www.tbsdtv.com/download/document/linux/tbs-tuner-firmwares_v1.0.tar.bz2"
+
+addon_install() {
+}

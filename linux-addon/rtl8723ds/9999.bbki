@@ -1,8 +1,10 @@
-[source]
-name = android_hardware_realtek
-update-method = git
-url = https://github.com/Realtek-OpenSource/android_hardware_realtek
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
 
-[firmware-files]
-source = android_hardware_realtek
-rtl_bt/rtl8723ds_fw.bin = bt/rtkbt/Firmware/BT/rtl8723ds_fw
+DESCRIPTION="Firmware for RTL8723ds"
+HOMEPAGE=""
+SRC_URI_GIT="https://github.com/Realtek-OpenSource/android_hardware_realtek"
+
+addon_install() {
+    inst_firmware rtl_bt/rtl8723ds_fw.bin ./bt/rtkbt/Firmware/BT/rtl8723ds_fw 
+}
