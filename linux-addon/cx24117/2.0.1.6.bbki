@@ -1,0 +1,14 @@
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
+
+DESCRIPTION="Firmware for CX24117"
+HOMEPAGE="https://github.com/tbsdtv/linux_media/wiki/CX24117-firmware"
+SRC_URI="http://www.tbsdtv.com/download/document/tbs6981/tbs6981-windows-driver_v2.0.1.6.zip"
+
+src_unpack() {
+    unzip -p tbs6981-windows-driver_v2.0.1.6.zip tbs6981_x86/TBS6981.sys | dd bs=1 skip=166120 count=55352 of=dvb-fe-cx24117.fw
+}
+
+addon_install() {
+    inst_firmware ./**
+}
