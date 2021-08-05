@@ -1,0 +1,14 @@
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
+
+DESCRIPTION="Linux kernel"
+HOMEPAGE="https://www.kernel.org"
+SRC_URI="xxxxx"
+
+src_extract() {
+    tar -xJf ${A} --strip 1
+}
+
+src_build() {
+
+}
