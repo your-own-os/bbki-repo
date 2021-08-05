@@ -6,9 +6,9 @@ HOMEPAGE="https://www.virtualbox.org/"
 SRC_URI="https://dev.gentoo.org/~polynomial-c/virtualbox/vbox-kernel-module-src-6.1.26.tar.xz"
 
 addon_build() {
-    make KERNELRELEASE=${KVER}
+    make KERN_VER=${KVER}
 }
 
 addon_install() {
-    make install KERNELRELEASE=${KVER}
+    make install KERN_VER=${KVER}
 }
