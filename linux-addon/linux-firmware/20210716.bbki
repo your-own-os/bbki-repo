@@ -5,10 +5,10 @@ DESCRIPTION="Linux firmware files"
 HOMEPAGE="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git"
 SRC_URI="https://www.kernel.org/pub/linux/kernel/firmware/linux-firmware-20210716.tar.xz"
 
-src_extract() {
+src_unpack() {
     tar -xJf ${A} --strip 1
 }
 
-addon_install() {
+kernel_addon_install() {
     inst_firmware ./**
 }

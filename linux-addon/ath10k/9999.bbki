@@ -5,6 +5,6 @@ DESCRIPTION="Firmware files for ath10k, a mac80211 driver for Qualcomm 802.11ac 
 HOMEPAGE="https://github.com/kvalo/ath10k-firmware"
 SRC_URI_GIT="https://github.com/kvalo/ath10k-firmware"
 
-addon_install() {
+kernel_addon_install() {
     inst_firmware drivers/net/wireless/ath/ath10k/ath10k_pci.ko
 }

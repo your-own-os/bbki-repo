@@ -9,6 +9,6 @@ src_unpack() {
     unzip -p tbs6981-windows-driver_v2.0.1.6.zip tbs6981_x86/TBS6981.sys | dd bs=1 skip=166120 count=55352 of=dvb-fe-cx24117.fw
 }
 
-addon_install() {
+kernel_addon_install() {
     inst_firmware ./**
 }

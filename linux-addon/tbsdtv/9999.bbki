@@ -20,11 +20,11 @@ src_fetch() {
     fi
 }
 
-addon_build() {
+kernel_addon_build() {
     # make KERNELRELEASE=${KVER}
 }
 
-addon_install() {
+kernel_addon_install() {
     # make install KERNELRELEASE=${KVER}
 }
 

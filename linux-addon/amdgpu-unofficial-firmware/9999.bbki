@@ -5,6 +5,6 @@ DESCRIPTION="Unofficial AMDGPU firmware repository"
 HOMEPAGE="https://github.com/Umio-Yasuno/unofficial-amdgpu-firmware-repo"
 SRC_URI_GIT="https://github.com/Umio-Yasuno/unofficial-amdgpu-firmware-repo"
 
-addon_install() {
+kernel_addon_install() {
     inst_firmware ./**
 }

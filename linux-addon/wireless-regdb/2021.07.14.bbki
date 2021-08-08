@@ -5,6 +5,6 @@ DESCRIPTION="Binary regulatory database for CRDA"
 HOMEPAGE="https://wireless.wiki.kernel.org/en/developers/regulatory/wireless-regdb"
 SRC_URI="https://www.kernel.org/pub/software/network/wireless-regdb/wireless-regdb-2021.07.14.tar.xz"
 
-addon_install() {
+kernel_addon_install() {
     inst_into /lib/firmware
 }
