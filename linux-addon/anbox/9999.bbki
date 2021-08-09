@@ -1,0 +1,11 @@
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
+
+DESCRIPTION="Kernel configuration for anbox"
+HOMEPAGE="https://anbox.io"
+
+kernel_addon_contribute_config_rules() {
+    add_config_rule "[symbols:/Device drivers/Android]=y"
+    add_config_rule "STAGING=y"
+    add_config_rule "ASHMEM=y"
+}
