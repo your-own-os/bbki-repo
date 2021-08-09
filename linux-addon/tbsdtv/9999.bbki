@@ -4,7 +4,7 @@
 DESCRIPTION="TBS linux open source drivers"
 HOMEPAGE="https://github.com/tbsdtv/linux-media/wiki"
 
-src_fetch() {
+fetch() {
     if [ -e "./media_build/.git] ; then
         /usr/libexec/robust_layer/git pull -C ./media_build
     else
