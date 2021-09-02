@@ -1,0 +1,11 @@
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
+
+DESCRIPTION="Minimal initramfs"
+HOMEPAGE=""
+
+initramfs_contribute_config_rules() {
+}
+
+initramfs_install() {
+}
