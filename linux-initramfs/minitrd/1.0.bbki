@@ -13,5 +13,5 @@ initramfs_contribute_config_rules() {
 }
 
 initramfs_install() {
-	return
+	echo ''
 }
