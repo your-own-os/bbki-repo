@@ -11,7 +11,3 @@ initramfs_contribute_config_rules() {
 	echo 'RD_LZMA=y'        # it seems RD_XZ has no effect, we have to enable RD_LZMA, kernel bug?
 	echo '[prompt-regex-symbols:Support initial ramdisks compressed using .*:/General setup]=n'
 }
-
-initramfs_install() {
-	echo ''
-}
