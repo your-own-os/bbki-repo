@@ -6,9 +6,9 @@ HOMEPAGE="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git
 SRC_URI="https://www.kernel.org/pub/linux/kernel/firmware/linux-firmware-20210818.tar.xz"
 
 src_unpack() {
-    tar -xJf ${A} --strip 1
+	tar -x -J --strip-components=1 -f ${A}
 }
 
 kernel_addon_install() {
-    inst_firmware ./**
+	inst_firmware ./**
 }
