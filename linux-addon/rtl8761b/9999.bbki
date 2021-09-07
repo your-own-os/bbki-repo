@@ -3,7 +3,7 @@
 
 DESCRIPTION="Firmware for RTL8761b"
 HOMEPAGE=""
-SRC_URI_GIT="https://github.com/Realtek-OpenSource/android_hardware_realtek"
+SRC_URI="git+https://github.com/Realtek-OpenSource/android_hardware_realtek"
 
 kernel_addon_patch_kernel() {
         #!/usr/bin/python3

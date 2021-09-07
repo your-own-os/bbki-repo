@@ -3,7 +3,7 @@
 
 DESCRIPTION="Unofficial ath6kl firmware"
 HOMEPAGE="https://github.com/TerryLv/ath6kl_firmware"
-SRC_URI_GIT="https://github.com/TerryLv/ath6kl_firmware"
+SRC_URI="git+https://github.com/TerryLv/ath6kl_firmware"
 
 kernel_addon_install() {
     inst_firmware ./**
