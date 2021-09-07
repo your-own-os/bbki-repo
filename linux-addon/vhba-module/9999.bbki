@@ -3,7 +3,7 @@
 
 DESCRIPTION="Virtual (SCSI) Host Bus Adapter kernel module for the CDEmu suite"
 HOMEPAGE="https://cdemu.sourceforge.io/"
-SRC_URI_GIT="https://github.com/cdemu/cdemu"
+SRC_URI="git+https://github.com/cdemu/cdemu"
 
 kernel_addon_build() {
     cd ./vhba-module
