@@ -10,5 +10,5 @@ src_unpack() {
 }
 
 kernel_addon_install() {
-    inst_firmware ./**
+    do_fw "./**"
 }
