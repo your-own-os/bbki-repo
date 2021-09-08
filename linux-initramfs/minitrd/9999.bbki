@@ -4,6 +4,14 @@
 DESCRIPTION="Minimal initramfs"
 HOMEPAGE=""
 
+src_unpack() {
+	cp ${FILESDIR}/* .
+}
+
+src_build() {
+	make
+}
+
 initramfs_contribute_config_rules() {
 	echo 'BLK_DEV_INITRD=y'
 	echo 'INITRAMFS_SOURCE=""'
