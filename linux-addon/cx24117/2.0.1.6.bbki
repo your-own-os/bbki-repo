@@ -1,4 +1,4 @@
-ins_fw# Copyright 1999-2021 Bbki Authors
+# Copyright 1999-2021 Bbki Authors
 # Distributed under the terms of the GNU General Public License v3
 
 DESCRIPTION="Firmware for CX24117"
@@ -10,5 +10,5 @@ src_unpack() {
 }
 
 kernel_addon_install() {
-    do_fw "./**"
+    ins_fw "./**"
 }

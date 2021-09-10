@@ -1,4 +1,4 @@
-ins_fw# Copyright 1999-2021 Bbki Authors
+# Copyright 1999-2021 Bbki Authors
 # Distributed under the terms of the GNU General Public License v3
 
 DESCRIPTION="Firmware for DVB6090"
@@ -6,5 +6,5 @@ HOMEPAGE="https://github.com/tbsdtv/linux_media/wiki/TBS-Open-Source-Wiki"
 SRC_URI="http://www.tbsdtv.com/download/document/linux/dvb-fe-mxl5xx.fw"
 
 kernel_addon_install() {
-    do_fw ./dvb6090
+    ins_fw ./dvb6090
 }

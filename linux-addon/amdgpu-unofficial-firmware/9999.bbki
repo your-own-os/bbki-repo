@@ -1,4 +1,4 @@
-ins_fw# Copyright 1999-2021 Bbki Authors
+# Copyright 1999-2021 Bbki Authors
 # Distributed under the terms of the GNU General Public License v3
 
 DESCRIPTION="Unofficial AMDGPU firmware repository"
@@ -6,5 +6,5 @@ HOMEPAGE="https://github.com/Umio-Yasuno/unofficial-amdgpu-firmware-repo"
 SRC_URI="git+https://github.com/Umio-Yasuno/unofficial-amdgpu-firmware-repo"
 
 kernel_addon_install() {
-    do_fw "./**"
+    ins_fw "./**"
 }
