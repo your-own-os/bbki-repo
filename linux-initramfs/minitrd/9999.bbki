@@ -4,6 +4,8 @@
 DESCRIPTION="Minimal initramfs"
 HOMEPAGE=""
 
+KDEPEND="vanilla"
+
 src_unpack() {
 	cp ${FILESDIR}/* .
 }

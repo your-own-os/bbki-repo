@@ -1,0 +1,11 @@
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
+
+DESCRIPTION="Genkernel initramfs"
+HOMEPAGE=""
+
+KDEPEND="genkernel"
+
+src_build() {
+	make
+}
