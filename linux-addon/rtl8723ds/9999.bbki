@@ -6,5 +6,5 @@ HOMEPAGE=""
 SRC_URI="git+https://github.com/Realtek-OpenSource/android_hardware_realtek"
 
 kernel_addon_install() {
-    do_fw rtl_bt/rtl8723ds_fw.bin ./bt/rtkbt/Firmware/BT/rtl8723ds_fw
+    ins_fw ./bt/rtkbt/Firmware/BT/rtl8723ds_fw rtl_bt/rtl8723ds_fw.bin
 }

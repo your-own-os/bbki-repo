@@ -6,5 +6,5 @@ HOMEPAGE="https://wireless.wiki.kernel.org/en/developers/regulatory/wireless-reg
 SRC_URI="https://www.kernel.org/pub/software/network/wireless-regdb/wireless-regdb-2021.08.28.tar.xz"
 
 kernel_addon_install() {
-    inst_into /lib/firmware
+    ins_file /lib/firmware
 }
