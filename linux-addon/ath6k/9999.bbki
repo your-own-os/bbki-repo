@@ -6,5 +6,5 @@ HOMEPAGE="https://github.com/TerryLv/ath6kl_firmware"
 SRC_URI="git+https://github.com/TerryLv/ath6kl_firmware"
 
 kernel_addon_install() {
-    ins_fw "./**"
+	find . -type f | xargs inst_fw
 }
