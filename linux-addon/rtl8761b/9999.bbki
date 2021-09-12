@@ -36,6 +36,6 @@ kernel_addon_patch_kernel() {
 }
 
 kernel_addon_install() {
-    ins_fw ./bt/rtkbt/Firmware/BT/rtl8761b_fw rtl_bt/rtl8761b_fw.bin 
-    ins_fw ./bt/rtkbt/Firmware/BT/rtl8761b_config rtl_bt/rtl8761b_config.bin
+    ins_firmware ./bt/rtkbt/Firmware/BT/rtl8761b_fw rtl_bt/rtl8761b_fw.bin 
+    ins_firmware ./bt/rtkbt/Firmware/BT/rtl8761b_config rtl_bt/rtl8761b_config.bin
 }
