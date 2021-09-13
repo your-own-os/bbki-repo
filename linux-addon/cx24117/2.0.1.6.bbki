@@ -10,5 +10,5 @@ src_unpack() {
 }
 
 kernel_addon_install() {
-	find . -type f | xargs inst_fw
+	ins_firmwares .
 }
