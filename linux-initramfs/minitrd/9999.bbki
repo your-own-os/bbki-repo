@@ -8,9 +8,6 @@ KDEPEND="vanilla"
 
 src_unpack() {
 	cp ${FILESDIR}/* .
-}
-
-src_build() {
 	make
 }
 
