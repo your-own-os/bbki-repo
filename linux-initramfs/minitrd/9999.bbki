@@ -18,3 +18,56 @@ initramfs_contribute_config_rules() {
 	echo 'RD_LZMA=y'        # it seems RD_XZ has no effect, we have to enable RD_LZMA, kernel bug?
 	echo '[prompt-regex-symbols:Support initial ramdisks compressed using .*:/General setup]=n'
 }
+
+initramfs_install() {
+	grep "CONFIG_RD_XZ=y"      "${KERNEL_CONFIG_FILE}" && die 'config symbol RD_XZ must be selected as "y"'
+	grep "CONFIG_RD_LZMA=y"    "${KERNEL_CONFIG_FILE}" && die 'config symbol RD_LZMA must be selected as "y"'
+	grep "CONFIG_BCACHE=m"     "${KERNEL_CONFIG_FILE}" && die 'config symbol BCACHE must be selected as "m"'
+	grep "CONFIG_BLK_DEV_SD=m" "${KERNEL_CONFIG_FILE}" && die 'config symbol BLK_DEV_SD must be selected as "m"'
+	grep "CONFIG_BLK_DEV_DM=m" "${KERNEL_CONFIG_FILE}" && die 'config symbol BLK_DEV_DM must be selected as "m"'
+	grep "CONFIG_EXT4_FS=m"    "${KERNEL_CONFIG_FILE}" && die 'config symbol EXT4_FS must be selected as "m"'
+	grep "CONFIG_VFAT_FS=m"    "${KERNEL_CONFIG_FILE}" && die 'config symbol VFAT_FS must be selected as "m"'
+
+	[ -e "${KERNEL_MODULES_DIR}" ] || die "${KERNEL_MODULES_DIR} does not exist"
+	[ -e "${FIRMWARE_DIR}" ] || die "${FIRMWARE_DIR} does not exist"
+
+	cp ${FILESDIR}/* .
+	make
+
+	mkdir root
+
+    # ...
+
+    ln -s usr/bin root/bin
+	mkdir root/dev
+	mkdir root/etc
+	ln -s usr/lib root/lib
+	ln -s usr/lib64 root/lib64
+	mkdir root/proc
+	mkdir root/run
+	ln -s usr/sbin root/sbin
+	mkdir root/sys
+	mkdir root/tmp
+	mkdir -p root/usr/bin
+	mkdir -p root/usr/lib
+	mkdir -p root/usr/lib64
+	mkdir -p root/usr/sbin
+	mkdir -p root/var
+	mkdir -p root/${KERNEL_MODULES_DIR}
+	mkdir -p root/${KERNEL_FIRMWARE_DIR}
+	mkdir -p root/sysroot
+
+	echo "" > root/etc/passwd
+	echo "root:x:0:0::/root:/bin/sh" >> root/etc/passwd
+	echo "nobody:x:65534:65534::/:/sbin/nologin" >> root/etc/passwd
+
+	echo "" > root/etc/group
+	echo "tty:x:5:" >> root/etc/group
+	echo "kmem:x:9:" >> root/etc/group
+	echo "disk:x:6:adm" >> root/etc/group
+	echo "floppy:x:11:" >> root/etc/group
+	echo "cdrom:x:19:" >> root/etc/group
+
+	# ...
+
+}
