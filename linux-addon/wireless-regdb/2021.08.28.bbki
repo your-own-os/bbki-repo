@@ -10,6 +10,6 @@ src_unpack() {
 }
 
 kernel_addon_install() {
-	ins_file regulatory.db "${FIRMWARE_DIR}"
-	ins_file regulatory.db.p7s "${FIRMWARE_DIR}"
+	ins_firmware_extfile regulatory.db
+	ins_firmware_extfile regulatory.db.p7s
 }
