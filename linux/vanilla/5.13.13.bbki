@@ -15,7 +15,7 @@ kernel_build() {
 }
 
 kernel_install() {
-	ins_kernel "arch/${ARCH}/boot/bzImage"
+	ins_kernel ./arch/${ARCH}/boot/bzImage
 
 	rm -rf /lib/modules/${KVER}
     emake modules_install
