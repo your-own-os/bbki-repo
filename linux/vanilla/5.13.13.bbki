@@ -8,3 +8,16 @@ SRC_URI="https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.13.13.tar.xz"
 src_unpack() {
 	tar -x -J --strip-components=1 -f ${A}
 }
+
+kernel_build() {
+	emake CFLAGS="-Wno-error"
+	emake CFLAGS="-Wno-error" modules
+}
+
+kernel_install() {
+	ins_kernel "arch/${ARCH}/boot/bzImage"
+	rm -rf /lib/modules/${KVER}
+    emake modules_install
+
+	# shutil.copy(os.path.join(self._trWorkDir, "System.map"), bootEntry.kernelMapFile)       # FIXME
+}
