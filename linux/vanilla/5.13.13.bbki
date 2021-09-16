@@ -27,3 +27,8 @@ kernel_install() {
 
 	# shutil.copy(os.path.join(self._trWorkDir, "System.map"), bootEntry.kernelMapFile)       # FIXME
 }
+
+kernel_cleanup() {
+	rm -f ${KERNEL_MODULES_DIR}/build		# remove symlink
+	rm -f ${KERNEL_MODULES_DIR}/source		# remove symlink
+}
