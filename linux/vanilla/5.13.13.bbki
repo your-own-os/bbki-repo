@@ -10,12 +10,17 @@ src_unpack() {
 }
 
 kernel_build() {
+	cp ${KERNEL_CONFIG_FILE} .config
+
+	# may change the .config file further
+	make olddefconfig
+
 	emake CFLAGS="-Wno-error"
 	emake CFLAGS="-Wno-error" modules
 }
 
 kernel_install() {
-	ins_kernel ./arch/${ARCH}/boot/bzImage
+	ins_kernel "arch/${ARCH}/boot/bzImage" ".config"
 
 	rm -rf /lib/modules/${KVER}
     emake modules_install
