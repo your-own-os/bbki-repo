@@ -5,10 +5,6 @@ DESCRIPTION="Kernel Modules for Virtualbox"
 HOMEPAGE="https://www.virtualbox.org/"
 SRC_URI="https://dev.gentoo.org/~polynomial-c/virtualbox/vbox-kernel-module-src-6.1.26.tar.xz"
 
-kernel_addon_build() {
-    make KERN_VER=${KVER}
-}
-
 kernel_addon_install() {
     make install KERN_VER=${KVER}
 }

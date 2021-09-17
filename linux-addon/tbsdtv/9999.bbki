@@ -20,10 +20,6 @@ fetch() {
     fi
 }
 
-kernel_addon_build() {
-    # make KERNELRELEASE=${KVER}
-}
-
 kernel_addon_install() {
     # make install KERNELRELEASE=${KVER}
 }
