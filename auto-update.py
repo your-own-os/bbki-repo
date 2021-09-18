@@ -3,6 +3,7 @@
 import os
 import io
 import re
+import json
 import glob
 import gzip
 import time
@@ -160,7 +161,40 @@ def update_linux_addon_virtualbox_modules():
     print("%s: %s updated." % (myName, targetFile))
 
 
+def update_linux_addon_broadcom_bt_firmware():
+    myName = "linux-addon/broadcom-bt-firmware"
+    selfDir = os.path.dirname(os.path.realpath(__file__))
+
+    # get version from internet
+    ver = None
+    remoteFile = None
+    if True:
+        data = util.fetchJsonData("https://api.github.com/repos/winterheart/broadcom-bt-firmware/releases")[0]
+        assert data["name"].startswith("v")
+        ver = data["name"][1:]
+        remoteFile = "https://github.com/winterheart/broadcom-bt-firmware/archive/refs/tags/v%s.tar.gz" % (ver)
+
+    # rename bbki file
+    targetFile = os.path.join(myName, "%s.bbki" % (ver))
+    util.renameTo(os.path.join(selfDir, targetFile))
+
+    # change SRC_URI
+    util.sed(targetFile, "SRC_URI=.*", "SRC_URI=\"%s\"" % (remoteFile))
+
+    # print result
+    print("%s: %s updated." % (myName, targetFile))
+
+
 class util:
+
+    @staticmethod
+    def fetchJsonData(myName, url):
+        try:
+            with urllib.request.urlopen(url, timeout=robust_layer.TIMEOUT) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except OSError as e:
+            print("%s: Failed to acces %s, %s" % (myName, url, e))
+            time.sleep(robust_layer.RETRY_WAIT)
 
     @staticmethod
     def fetchHtmlBinaryData(myName, url):
@@ -168,7 +202,7 @@ class util:
             with urllib.request.urlopen(url, timeout=robust_layer.TIMEOUT) as resp:
                 return resp.read()
         except OSError as e:
-            print("Failed to acces %s, %s" % (url, e))
+            print("%s: Failed to acces %s, %s" % (myName, url, e))
             time.sleep(robust_layer.RETRY_WAIT)
 
     @staticmethod
@@ -253,3 +287,4 @@ if __name__ == "__main__":
     update_linux_addon_linux_firmware()
     update_linux_addon_virtualbox_modules()
     update_linux_addon_wireless_regdb()
+    update_linux_addon_broadcom_bt_firmware()
