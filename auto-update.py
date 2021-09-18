@@ -187,7 +187,6 @@ def update_linux_addon_bluez_firmware():
 
     # get version from internet
     ver = None
-    remoteFile = None
     if True:
         root = util.fetchAndParseHtmlPage(myName, url)
         for atag in root.xpath(".//a"):
@@ -195,7 +194,6 @@ def update_linux_addon_bluez_firmware():
             if m is not None:
                 if ver is None or util.compareVersion(ver, m.group(1)) < 0:
                     ver = m.group(1)
-                    remoteFile = os.path.join(url, atag.get("href"))
         assert ver is not None
 
     # rename bbki file
@@ -204,6 +202,33 @@ def update_linux_addon_bluez_firmware():
 
     # print result
     print("%s: %s updated." % (myName, targetFile))
+
+
+def update_linux_addon_ipw2200_firmware():
+    myName = "linux-addon/ipw2200-firmware"
+    selfDir = os.path.dirname(os.path.realpath(__file__))
+    url = "http://ipw2200.sourceforge.net/firmware.php"
+
+    # get version from internet
+    ver = None
+    if True:
+        root = util.fetchAndParseHtmlPage(myName, url)
+        for atag in root.xpath(".//a"):
+            if atag.text is None:           # it's really strange that a.text can be None
+                continue
+            m = re.fullmatch("firmware v([0-9\.]+)", atag.text)
+            if m is not None:
+                if ver is None or util.compareVersion(ver, m.group(1)) < 0:
+                    ver = m.group(1)
+        assert ver is not None
+
+    # rename bbki file
+    targetFile = os.path.join(myName, "%s.bbki" % (ver))
+    util.renameTo(os.path.join(selfDir, targetFile))
+
+    # print result
+    print("%s: %s updated." % (myName, targetFile))
+
 
 
 class util:
@@ -279,10 +304,19 @@ class util:
 
         verList1 = partList1[0].split(".")
         verList2 = partList2[0].split(".")
-        assert len(verList1) == 3 and len(verList2) == 3
 
-        ver1 = int(verList1[0]) * 10000 + int(verList1[1]) * 100 + int(verList1[2])
-        ver2 = int(verList2[0]) * 10000 + int(verList2[1]) * 100 + int(verList2[2])
+        if len(verList1) == 3 and len(verList2) == 3:
+            ver1 = int(verList1[0]) * 10000 + int(verList1[1]) * 100 + int(verList1[2])
+            ver2 = int(verList2[0]) * 10000 + int(verList2[1]) * 100 + int(verList2[2])
+        elif len(verList1) == 2 and len(verList2) == 2:
+            ver1 = int(verList1[0]) * 100 + int(verList1[1])
+            ver2 = int(verList2[0]) * 100 + int(verList2[1])
+        elif len(verList1) == 1 and len(verList2) == 1:
+            ver1 = int(verList1[0])
+            ver2 = int(verList2[0])
+        else:
+            assert False
+
         if ver1 > ver2:
             return 1
         elif ver1 < ver2:
@@ -310,3 +344,4 @@ if __name__ == "__main__":
     update_linux_addon_wireless_regdb()
     update_linux_addon_broadcom_bt_firmware()
     update_linux_addon_bluez_firmware()
+    update_linux_addon_ipw2200_firmware()
