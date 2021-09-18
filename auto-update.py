@@ -141,14 +141,9 @@ def update_linux_addon_virtualbox_modules():
     ver = None
     remoteFile = None
     if True:
-        root = util.fetchAndParseHtmlPage(myName, url)
-        for atag in root.xpath(".//a"):
-            m = re.fullmatch("vbox-kernel-module-src-([0-9\.]+)\.tar\.xz", atag.text)
-            if m is not None:
-                if ver is None or util.compareVersion(ver, m.group(1)) < 0:
-                    ver = m.group(1)
-                    remoteFile = os.path.join(url, atag.get("href"))
+        ver, href = util.getNewestVersionFromHyperlinks(myName, url, "vbox-kernel-module-src-([0-9\.]+)\.tar\.xz")
         assert ver is not None
+        remoteFile = os.path.join(url, href)
 
     # rename bbki file
     targetFile = os.path.join(myName, "%s.bbki" % (ver))
@@ -186,15 +181,8 @@ def update_linux_addon_bluez_firmware():
     url = "http://www.bluez.org/download"
 
     # get version from internet
-    ver = None
-    if True:
-        root = util.fetchAndParseHtmlPage(myName, url)
-        for atag in root.xpath(".//a"):
-            m = re.fullmatch("bluez-firmware-([0-9\.]+)\.tar\.gz", atag.text)
-            if m is not None:
-                if ver is None or util.compareVersion(ver, m.group(1)) < 0:
-                    ver = m.group(1)
-        assert ver is not None
+    ver = util.getNewestVersionFromHyperlinks(myName, url, "bluez-firmware-([0-9\.]+)\.tar\.gz")[0]
+    assert ver is not None
 
     # rename bbki file
     targetFile = os.path.join(myName, "%s.bbki" % (ver))
@@ -210,17 +198,8 @@ def update_linux_addon_ipw2100_firmware():
     url = "http://ipw2100.sourceforge.net/firmware.php"
 
     # get version from internet
-    ver = None
-    if True:
-        root = util.fetchAndParseHtmlPage(myName, url)
-        for atag in root.xpath(".//a"):
-            if atag.text is None:           # it's really strange that a.text can be None
-                continue
-            m = re.fullmatch("firmware v([0-9\.]+)", atag.text)
-            if m is not None:
-                if ver is None or util.compareVersion(ver, m.group(1)) < 0:
-                    ver = m.group(1)
-        assert ver is not None
+    ver = util.getNewestVersionFromHyperlinks(myName, url, "firmware v([0-9\.]+)")[0]
+    assert ver is not None
 
     # rename bbki file
     targetFile = os.path.join(myName, "%s.bbki" % (ver))
@@ -236,17 +215,8 @@ def update_linux_addon_ipw2200_firmware():
     url = "http://ipw2200.sourceforge.net/firmware.php"
 
     # get version from internet
-    ver = None
-    if True:
-        root = util.fetchAndParseHtmlPage(myName, url)
-        for atag in root.xpath(".//a"):
-            if atag.text is None:           # it's really strange that a.text can be None
-                continue
-            m = re.fullmatch("firmware v([0-9\.]+)", atag.text.strip())     # end space is found in atag.text
-            if m is not None:
-                if ver is None or util.compareVersion(ver, m.group(1)) < 0:
-                    ver = m.group(1)
-        assert ver is not None
+    ver = util.getNewestVersionFromHyperlinks(myName, url, "firmware v([0-9\.]+)")[0]
+    assert ver is not None
 
     # rename bbki file
     targetFile = os.path.join(myName, "%s.bbki" % (ver))
@@ -256,8 +226,23 @@ def update_linux_addon_ipw2200_firmware():
     print("%s: %s updated." % (myName, targetFile))
 
 
-
 class util:
+
+    @staticmethod
+    def getNewestVersionFromHyperlinks(myName, url, pattern):
+        ver = None
+        href = None
+        root = util.fetchAndParseHtmlPage(myName, url)
+        for atag in root.xpath(".//a"):
+            if atag.text is None:
+                # it's really strange that a.text can be None
+                continue
+            m = re.fullmatch(pattern, atag.text.strip())
+            if m is not None:
+                if ver is None or util.compareVersion(ver, m.group(1)) < 0:
+                    ver = m.group(1)
+                    href = atag.get("href")
+        return (ver, href)
 
     @staticmethod
     def fetchJsonData(myName, url):
