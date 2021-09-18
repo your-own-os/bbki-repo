@@ -3,7 +3,7 @@
 
 DESCRIPTION="Broadcom Bluetooth firmware"
 HOMEPAGE="https://github.com/winterheart/broadcom-bt-firmware"
-SRC_URI="https://github.com/winterheart/broadcom-bt-firmware/archive/refs/tags/v12.0.1.1105_p3.tar.gz"
+SRC_URI="https://github.com/winterheart/${PN}/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="broadcom_bcm20702 MIT"
 

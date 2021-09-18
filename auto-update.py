@@ -167,19 +167,40 @@ def update_linux_addon_broadcom_bt_firmware():
 
     # get version from internet
     ver = None
-    remoteFile = None
     if True:
         data = util.fetchJsonData(myName, "https://api.github.com/repos/winterheart/broadcom-bt-firmware/releases")[0]
         assert data["name"].startswith("v")
         ver = data["name"][1:]
-        remoteFile = "https://github.com/winterheart/broadcom-bt-firmware/archive/refs/tags/v%s.tar.gz" % (ver)
 
     # rename bbki file
     targetFile = os.path.join(myName, "%s.bbki" % (ver))
     util.renameTo(os.path.join(selfDir, targetFile))
 
-    # change SRC_URI
-    util.sed(targetFile, "SRC_URI=.*", "SRC_URI=\"%s\"" % (remoteFile))
+    # print result
+    print("%s: %s updated." % (myName, targetFile))
+
+
+def update_linux_addon_bluez_firmware():
+    myName = "linux-addon/bluez-firmware"
+    selfDir = os.path.dirname(os.path.realpath(__file__))
+    url = "http://www.bluez.org/download"
+
+    # get version from internet
+    ver = None
+    remoteFile = None
+    if True:
+        root = util.fetchAndParseHtmlPage(myName, url)
+        for atag in root.xpath(".//a"):
+            m = re.fullmatch("bluez-firmware-([0-9\.]+)\.tar\.[a-z]+", atag.text)
+            if m is not None:
+                if ver is None or util.compareVersion(ver, m.group(1)) < 0:
+                    ver = m.group(1)
+                    remoteFile = os.path.join(url, atag.get("href"))
+        assert ver is not None
+
+    # rename bbki file
+    targetFile = os.path.join(myName, "%s.bbki" % (ver))
+    util.renameTo(os.path.join(selfDir, targetFile))
 
     # print result
     print("%s: %s updated." % (myName, targetFile))
@@ -288,3 +309,4 @@ if __name__ == "__main__":
     update_linux_addon_virtualbox_modules()
     update_linux_addon_wireless_regdb()
     update_linux_addon_broadcom_bt_firmware()
+    update_linux_addon_bluez_firmware()
