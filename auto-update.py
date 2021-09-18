@@ -316,15 +316,25 @@ class util:
         verList1 = partList1[0].split(".")
         verList2 = partList2[0].split(".")
 
-        if len(verList1) == 3 and len(verList2) == 3:
-            ver1 = int(verList1[0]) * 10000 + int(verList1[1]) * 100 + int(verList1[2])
-            ver2 = int(verList2[0]) * 10000 + int(verList2[1]) * 100 + int(verList2[2])
-        elif len(verList1) == 2 and len(verList2) == 2:
-            ver1 = int(verList1[0]) * 100 + int(verList1[1])
-            ver2 = int(verList2[0]) * 100 + int(verList2[1])
-        elif len(verList1) == 1 and len(verList2) == 1:
-            ver1 = int(verList1[0])
-            ver2 = int(verList2[0])
+        if len(verList1) == 4:
+            ver1 = int(verList1[0]) * 1000000 + int(verList1[1]) * 10000 + int(verList1[2]) * 100 + int(verList1[3])
+        elif len(verList1) == 3:
+            ver1 = int(verList1[0]) * 1000000 + int(verList1[1]) * 10000 + int(verList1[2]) * 100
+        elif len(verList1) == 2:
+            ver1 = int(verList1[0]) * 1000000 + int(verList1[1]) * 10000
+        elif len(verList1) == 1:
+            ver1 = int(verList1[0]) * 1000000
+        else:
+            assert False
+
+        if len(verList2) == 4:
+            ver2 = int(verList2[0]) * 1000000 + int(verList2[1]) * 10000 + int(verList2[2]) * 100 + int(verList2[3])
+        elif len(verList2) == 3:
+            ver2 = int(verList2[0]) * 1000000 + int(verList2[1]) * 10000 + int(verList2[2]) * 100
+        elif len(verList2) == 2:
+            ver2 = int(verList2[0]) * 1000000 + int(verList2[1]) * 10000
+        elif len(verList2) == 1:
+            ver2 = int(verList2[0]) * 1000000
         else:
             assert False
 
