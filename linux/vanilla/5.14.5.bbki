@@ -1,0 +1,30 @@
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
+
+DESCRIPTION="Linux kernel"
+HOMEPAGE="https://www.kernel.org"
+SRC_URI="https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.14.5.tar.xz"
+
+src_unpack() {
+	tar -x -J --strip-components=1 -f ${A}
+}
+
+kernel_install() {
+	cp ${KERNEL_CONFIG_FILE} .config
+
+	# may change the .config file further
+	make olddefconfig
+
+	emake CFLAGS="-Wno-error"
+	ins_kernel "arch/${ARCH}/boot/bzImage" ".config"
+
+	rm -rf /lib/modules/${KVER}
+    emake modules_install
+
+	# shutil.copy(os.path.join(self._trWorkDir, "System.map"), bootEntry.kernelMapFile)       # FIXME
+}
+
+kernel_cleanup() {
+	rm -f ${KERNEL_MODULES_DIR}/build		# remove symlink
+	rm -f ${KERNEL_MODULES_DIR}/source		# remove symlink
+}
