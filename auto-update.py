@@ -216,7 +216,7 @@ def update_linux_addon_ipw2200_firmware():
         for atag in root.xpath(".//a"):
             if atag.text is None:           # it's really strange that a.text can be None
                 continue
-            m = re.fullmatch("firmware v([0-9\.]+)", atag.text)
+            m = re.fullmatch("firmware v([0-9\.]+)", atag.text.strip())
             if m is not None:
                 if ver is None or util.compareVersion(ver, m.group(1)) < 0:
                     ver = m.group(1)
