@@ -1,0 +1,17 @@
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
+
+DESCRIPTION="Broadcom Bluetooth firmware"
+HOMEPAGE="https://github.com/winterheart/broadcom-bt-firmware"
+SRC_URI="https://github.com/winterheart/${PN}/archive/v${PV}.tar.gz -> ${P}.tar.gz"
+
+LICENSE="broadcom_bcm20702 MIT"
+
+src_unpack() {
+	tar -x -J --strip-components=1 -f ${A}
+	ls | grep -v brcom | xargs rm
+}
+
+kernel_addon_install() {
+	ins_firmwares .
+}
