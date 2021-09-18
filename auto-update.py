@@ -169,7 +169,7 @@ def update_linux_addon_broadcom_bt_firmware():
     ver = None
     remoteFile = None
     if True:
-        data = util.fetchJsonData("https://api.github.com/repos/winterheart/broadcom-bt-firmware/releases")[0]
+        data = util.fetchJsonData(myName, "https://api.github.com/repos/winterheart/broadcom-bt-firmware/releases")[0]
         assert data["name"].startswith("v")
         ver = data["name"][1:]
         remoteFile = "https://github.com/winterheart/broadcom-bt-firmware/archive/refs/tags/v%s.tar.gz" % (ver)
