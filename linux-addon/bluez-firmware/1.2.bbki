@@ -1,0 +1,17 @@
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
+
+DESCRIPTION="Firmware for Broadcom BCM203x and STLC2300 Bluetooth chips"
+HOMEPAGE="http://bluez.sourceforge.net/"
+SRC_URI="http://bluez.sourceforge.net/download/${P}.tar.gz"
+
+LICENSE="bluez-firmware"
+
+src_unpack() {
+	tar -x -J --strip-components=1 -f ${A}
+}
+
+kernel_addon_install() {
+	ins_firmwares ./broadcom
+	ins_firmwares ./st
+}
