@@ -8,7 +8,7 @@ SRC_URI="http://bluez.sourceforge.net/download/${P}.tar.gz"
 LICENSE="bluez-firmware"
 
 src_unpack() {
-	tar -x -J --strip-components=1 -f ${A}
+	tar -x -z --strip-components=1 -f ${A}
 }
 
 kernel_addon_install() {

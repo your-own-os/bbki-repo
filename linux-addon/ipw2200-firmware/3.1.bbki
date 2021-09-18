@@ -10,7 +10,7 @@ SRC_URI="http://distfiles.gentoo.org/distfiles/${MY_P}.tgz"
 LICENSE="ipw2200-fw"
 
 src_unpack() {
-	tar -x -J --strip-components=1 -f ${A}
+	tar -x -z --strip-components=1 -f ${A}
 }
 
 kernel_addon_install() {
