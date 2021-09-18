@@ -204,6 +204,32 @@ def update_linux_addon_bluez_firmware():
     print("%s: %s updated." % (myName, targetFile))
 
 
+def update_linux_addon_ipw2100_firmware():
+    myName = "linux-addon/ipw2100-firmware"
+    selfDir = os.path.dirname(os.path.realpath(__file__))
+    url = "http://ipw2100.sourceforge.net/firmware.php"
+
+    # get version from internet
+    ver = None
+    if True:
+        root = util.fetchAndParseHtmlPage(myName, url)
+        for atag in root.xpath(".//a"):
+            if atag.text is None:           # it's really strange that a.text can be None
+                continue
+            m = re.fullmatch("firmware v([0-9\.]+)", atag.text)
+            if m is not None:
+                if ver is None or util.compareVersion(ver, m.group(1)) < 0:
+                    ver = m.group(1)
+        assert ver is not None
+
+    # rename bbki file
+    targetFile = os.path.join(myName, "%s.bbki" % (ver))
+    util.renameTo(os.path.join(selfDir, targetFile))
+
+    # print result
+    print("%s: %s updated." % (myName, targetFile))
+
+
 def update_linux_addon_ipw2200_firmware():
     myName = "linux-addon/ipw2200-firmware"
     selfDir = os.path.dirname(os.path.realpath(__file__))
@@ -216,7 +242,7 @@ def update_linux_addon_ipw2200_firmware():
         for atag in root.xpath(".//a"):
             if atag.text is None:           # it's really strange that a.text can be None
                 continue
-            m = re.fullmatch("firmware v([0-9\.]+)", atag.text.strip())
+            m = re.fullmatch("firmware v([0-9\.]+)", atag.text.strip())     # end space is found in atag.text
             if m is not None:
                 if ver is None or util.compareVersion(ver, m.group(1)) < 0:
                     ver = m.group(1)
@@ -344,4 +370,5 @@ if __name__ == "__main__":
     update_linux_addon_wireless_regdb()
     update_linux_addon_broadcom_bt_firmware()
     update_linux_addon_bluez_firmware()
+    update_linux_addon_ipw2100_firmware()
     update_linux_addon_ipw2200_firmware()
