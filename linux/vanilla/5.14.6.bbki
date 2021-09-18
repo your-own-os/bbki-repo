@@ -19,7 +19,7 @@ kernel_install() {
 	ins_kernel "arch/${ARCH}/boot/bzImage" ".config"
 
 	rm -rf /lib/modules/${KVER}
-	emake modules_install
+    emake modules_install
 
 	# shutil.copy(os.path.join(self._trWorkDir, "System.map"), bootEntry.kernelMapFile)       # FIXME
 }
