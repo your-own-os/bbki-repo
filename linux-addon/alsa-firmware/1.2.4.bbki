@@ -8,7 +8,7 @@ SRC_URI="https://www.alsa-project.org/files/pub/firmware/${P}.tar.bz2"
 LICENSE="GPL-2"
 
 src_unpack() {
-	tar -x -z --strip-components=1 -f ${A}
+	tar -x -j --strip-components=1 -f ${A}
 }
 
 kernel_addon_install() {
