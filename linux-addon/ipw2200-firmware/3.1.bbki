@@ -5,7 +5,7 @@ MY_P=${P/firmware/fw}
 
 DESCRIPTION="Firmware for the Intel PRO/Wireless 2200BG/2915ABG miniPCI and 2225BG PCI"
 HOMEPAGE="http://ipw2200.sourceforge.net/"
-SRC_URI="http://www.bughost.org/firmware/${MY_P}.tgz"
+SRC_URI="http://distfiles.gentoo.org/distfiles/${MY_P}.tgz"
 
 LICENSE="ipw2200-fw"
 
