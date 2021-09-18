@@ -226,6 +226,23 @@ def update_linux_addon_ipw2200_firmware():
     print("%s: %s updated." % (myName, targetFile))
 
 
+def update_linux_addon_alsa_firmware():
+    myName = "linux-addon/alsa-firmware"
+    selfDir = os.path.dirname(os.path.realpath(__file__))
+    url = "https://www.alsa-project.org/files/pub/firmware"
+
+    # get version from internet
+    ver = util.getNewestVersionFromHyperlinks(myName, url, "alsa-firmware-([0-9\.]+)\.tar\.bz2")[0]
+    assert ver is not None
+
+    # rename bbki file
+    targetFile = os.path.join(myName, "%s.bbki" % (ver))
+    util.renameTo(os.path.join(selfDir, targetFile))
+
+    # print result
+    print("%s: %s updated." % (myName, targetFile))
+
+
 class util:
 
     @staticmethod
@@ -367,3 +384,4 @@ if __name__ == "__main__":
     update_linux_addon_bluez_firmware()
     update_linux_addon_ipw2100_firmware()
     update_linux_addon_ipw2200_firmware()
+    update_linux_addon_alsa_firmware()
