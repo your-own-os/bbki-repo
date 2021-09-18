@@ -1,0 +1,18 @@
+# Copyright 1999-2021 Bbki Authors
+# Distributed under the terms of the GNU General Public License v3
+
+MY_P=${P/firmware/fw}
+
+DESCRIPTION="Firmware for the Intel PRO/Wireless 2200BG/2915ABG miniPCI and 2225BG PCI"
+HOMEPAGE="http://ipw2200.sourceforge.net/"
+SRC_URI="http://www.bughost.org/firmware/${MY_P}.tgz"
+
+LICENSE="ipw2200-fw"
+
+src_unpack() {
+	tar -x -J --strip-components=1 -f ${A}
+}
+
+kernel_addon_install() {
+	ins_firmwares .
+}
