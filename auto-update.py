@@ -191,7 +191,7 @@ def update_linux_addon_bluez_firmware():
     if True:
         root = util.fetchAndParseHtmlPage(myName, url)
         for atag in root.xpath(".//a"):
-            m = re.fullmatch("bluez-firmware-([0-9\.]+)\.tar\.[a-z]+", atag.text)
+            m = re.fullmatch("bluez-firmware-([0-9\.]+)\.tar\.gz", atag.text)
             if m is not None:
                 if ver is None or util.compareVersion(ver, m.group(1)) < 0:
                     ver = m.group(1)
