@@ -79,27 +79,15 @@ def update_linux_vanilla():
 def update_linux_addon_linux_firmware():
     myName = "linux-addon/linux-firmware"
     selfDir = os.path.dirname(os.path.realpath(__file__))
-    firmwareUrl = "https://www.kernel.org/pub/linux/kernel/firmware"
+    url = "https://www.kernel.org/pub/linux/kernel/firmware"
 
-    # get firmware version version from internet
-    firmwareVersion = None
-    remoteFile = None
-    if True:
-        root = util.fetchAndParseHtmlPage(myName, firmwareUrl)
-        for atag in root.xpath(".//a"):
-            m = re.fullmatch("linux-firmware-(.*)\\.tar\\.xz", atag.text)
-            if m is not None:
-                if firmwareVersion is None or firmwareVersion < m.group(1):
-                    firmwareVersion = m.group(1)
-                    remoteFile = os.path.join(firmwareUrl, atag.get("href"))
-        assert firmwareVersion is not None
+    # get version from internet
+    ver = util.getNewestVersionFromHyperlinks(myName, url, "linux-firmware-(.*)\\.tar\\.xz")[0]
+    assert ver is not None
 
     # rename bbki file
-    targetFile = os.path.join(myName, "%s.bbki" % (firmwareVersion))
+    targetFile = os.path.join(myName, "%s.bbki" % (ver))
     util.renameTo(os.path.join(selfDir, targetFile))
-
-    # change SRC_URI
-    util.sed(targetFile, "SRC_URI=.*", "SRC_URI=\"%s\"" % (remoteFile))
 
     # print result
     print("%s: %s updated." % (myName, targetFile))
@@ -138,19 +126,12 @@ def update_linux_addon_virtualbox_modules():
     url = "https://dev.gentoo.org/~polynomial-c/virtualbox"
 
     # get version from internet
-    ver = None
-    remoteFile = None
-    if True:
-        ver, href = util.getNewestVersionFromHyperlinks(myName, url, "vbox-kernel-module-src-([0-9\.]+)\.tar\.xz")
-        assert ver is not None
-        remoteFile = os.path.join(url, href)
+    ver = util.getNewestVersionFromHyperlinks(myName, url, "vbox-kernel-module-src-([0-9\.]+)\.tar\.xz")[0]
+    assert ver is not None
 
     # rename bbki file
     targetFile = os.path.join(myName, "%s.bbki" % (ver))
     util.renameTo(os.path.join(selfDir, targetFile))
-
-    # change SRC_URI
-    util.sed(targetFile, "SRC_URI=.*", "SRC_URI=\"%s\"" % (remoteFile))
 
     # print result
     print("%s: %s updated." % (myName, targetFile))
