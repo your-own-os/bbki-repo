@@ -3,7 +3,7 @@
 
 DESCRIPTION="Linux firmware files"
 HOMEPAGE="https://git.kernel.org/?p=linux/kernel/git/firmware/linux-firmware.git"
-SRC_URI="https://www.kernel.org/pub/linux/kernel/firmware/${PV}.tar.xz"
+SRC_URI="https://www.kernel.org/pub/linux/kernel/firmware/linux-firmware-${PV}.tar.xz"
 
 src_unpack() {
 	tar -x -J --strip-components=1 -f ${A}
