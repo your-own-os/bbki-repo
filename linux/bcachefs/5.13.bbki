@@ -3,10 +3,10 @@
 
 DESCRIPTION="Linux kernel"
 HOMEPAGE="https://www.kernel.org"
-SRC_URI="https://github.com/koverstreet/bcachefs/archive/62fb9874f5da54fdb243003b386128037319b219.tar.xz -> bcachefs-kernel-5.13.tar.xz"
+SRC_URI="https://github.com/koverstreet/bcachefs/archive/62fb9874f5da54fdb243003b386128037319b219.zip -> bcachefs-kernel-5.13.zip"
 
 src_unpack() {
-	tar -x -J --strip-components=1 -f ${A}
+	unzip ${A} && f=(./*) && mv ./*/* . && rmdir ${f[@]}
 }
 
 kernel_install() {
