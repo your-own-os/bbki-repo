@@ -7,7 +7,7 @@ SRC_URI="https://github.com/koverstreet/bcachefs/archive/62fb9874f5da54fdb243003
 
 src_unpack() {
 	# decompress and remove leading directory, similar to "tar --strip-components=1"
-	unzip ${A} && f=(./*) && mv ./*/* . && rmdir ${f[@]}
+	unzip ${A} && f=(./*) && mv ./*/* . && rm -rf ${f[@]}
 }
 
 kernel_install() {
