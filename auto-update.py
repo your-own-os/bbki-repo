@@ -102,7 +102,7 @@ def update_linux_bcachefs():
 
     # change SRC_URI
     remoteFile = "https://github.com/koverstreet/bcachefs/archive/%s.zip" % (commitName)
-    util.sed(targetFile, "SRC_URI=.*", "SRC_URI=\"%s\"" % (remoteFile))
+    util.sed(targetFile, "SRC_URI=.*", "SRC_URI=\"%s -> bcachefs-kernel-%s.zip\"" % (remoteFile, ver))
 
     # print result
     print("%s: %s updated." % (myName, targetFile))
