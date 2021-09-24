@@ -79,15 +79,16 @@ def update_linux_vanilla():
 def update_linux_bcachefs():
     myName = "linux/bcachefs"
     selfDir = os.path.dirname(os.path.realpath(__file__))
+    url = "https://evilpiepirate.org"
 
     # get version from internet
-    ver, href = util.getNewestVersionFromHyperlinks(myName, url, "v([0-9\\.]+)")
+    ver, href = util.getNewestVersionFromHyperlinks(myName, url + "/git/bcachefs.git", "v([0-9\\.]+)")
     assert ver is not None
 
     # get commit name
     commitName = None
     if True:
-        root = util.fetchAndParseHtmlPage(myName, href)
+        root = util.fetchAndParseHtmlPage(myName, url + href)
         for atag in root.xpath(".//a"):
             m = re.fullmatch(".*\\?h=v([0-9\\.]+)&id=(\\S+)", atag.get("href"))
             if m is not None:

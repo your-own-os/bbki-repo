@@ -3,7 +3,7 @@
 
 DESCRIPTION="Linux kernel"
 HOMEPAGE="https://www.kernel.org"
-SRC_URI="https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.14.6.tar.xz"
+SRC_URI="https://github.com/koverstreet/bcachefs/archive/62fb9874f5da54fdb243003b386128037319b219.zip"
 
 src_unpack() {
 	tar -x -J --strip-components=1 -f ${A}
@@ -19,9 +19,7 @@ kernel_install() {
 	ins_kernel "arch/${ARCH}/boot/bzImage" ".config"
 
 	rm -rf /lib/modules/${KVER}
-    emake modules_install
-
-	# shutil.copy(os.path.join(self._trWorkDir, "System.map"), bootEntry.kernelMapFile)       # FIXME
+	emake modules_install
 }
 
 kernel_cleanup() {
