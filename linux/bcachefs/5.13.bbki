@@ -6,6 +6,7 @@ HOMEPAGE="https://www.kernel.org"
 SRC_URI="https://github.com/koverstreet/bcachefs/archive/62fb9874f5da54fdb243003b386128037319b219.zip -> bcachefs-kernel-5.13.zip"
 
 src_unpack() {
+	# decompress and remove leading directory, similar to "tar --strip-components=1"
 	unzip ${A} && f=(./*) && mv ./*/* . && rmdir ${f[@]}
 }
 
