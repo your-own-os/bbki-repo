@@ -66,6 +66,8 @@ def update_linux_vanilla():
         return
 
     # rename bbki file
+    if util.countChar(kernelVersion, ".") < 2:
+        kernelVersion += ".0"
     targetFile = os.path.join(myName, "%s.bbki" % (kernelVersion))
     util.renameTo(os.path.join(selfDir, targetFile))
 
@@ -95,6 +97,10 @@ def update_linux_bcachefs():
                 assert m.group(1) == ver
                 commitName = m.group(2)
     assert commitName is not None
+
+    # modify version: 5.13 -> 5.13.0
+    if util.countChar(ver, ".") < 2:
+        ver += ".0"
 
     # rename bbki file
     targetFile = os.path.join(myName, "%s.bbki" % (ver))
@@ -257,6 +263,14 @@ def update_linux_addon_alsa_firmware():
 
 
 class util:
+
+    @staticmethod
+    def countChar(s, c):
+        ret = 0
+        for i in s:
+            if i == c:
+                ret += 1
+        return ret
 
     @staticmethod
     def getNewestVersionFromHyperlinks(myName, url, pattern):
