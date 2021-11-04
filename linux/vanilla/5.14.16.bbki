@@ -3,11 +3,10 @@
 
 DESCRIPTION="Linux kernel"
 HOMEPAGE="https://www.kernel.org"
-SRC_URI="https://github.com/koverstreet/bcachefs/archive/62fb9874f5da54fdb243003b386128037319b219.zip -> bcachefs-kernel-5.13.0.zip"
+SRC_URI="https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.14.16.tar.xz"
 
 src_unpack() {
-	# decompress and remove leading directory, similar to "tar --strip-components=1"
-	unzip ${A} && f=(./*) && mv ./*/* . && rm -rf ${f[@]}
+	tar -x -J --strip-components=1 -f ${A}
 }
 
 kernel_install() {
@@ -21,6 +20,8 @@ kernel_install() {
 
 	rm -rf /lib/modules/${KVER}
 	emake modules_install
+
+	# shutil.copy(os.path.join(self._trWorkDir, "System.map"), bootEntry.kernelMapFile)       # FIXME
 }
 
 kernel_cleanup() {

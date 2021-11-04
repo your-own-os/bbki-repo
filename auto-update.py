@@ -182,7 +182,8 @@ def update_linux_addon_broadcom_bt_firmware():
     # get version from internet
     ver = None
     if True:
-        data = util.fetchJsonData(myName, "https://api.github.com/repos/winterheart/broadcom-bt-firmware/releases")[0]
+        data = util.fetchJsonData(myName, "https://api.github.com/repos/winterheart/broadcom-bt-firmware/releases")
+        data = data[0]                          # get the first version
         assert data["name"].startswith("v")
         ver = data["name"][1:]
 
