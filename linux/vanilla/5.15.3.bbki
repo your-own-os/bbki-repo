@@ -3,7 +3,7 @@
 
 DESCRIPTION="Linux kernel"
 HOMEPAGE="https://www.kernel.org"
-SRC_URI="https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.14.16.tar.xz"
+SRC_URI="https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.15.3.tar.xz"
 
 src_unpack() {
 	tar -x -J --strip-components=1 -f ${A}
