@@ -7,6 +7,9 @@ SRC_URI="git+https://evilpiepirate.org/git/bcachefs.git"
 
 kernel_install() {
 	cp ${KERNEL_CONFIG_FILE} .config
+	echo 'BCACHEFS_FS=y' >> .config
+	echo 'BCACHEFS_QUOTA=y' >> .config
+	echo 'BCACHEFS_POSIX_ACL=y' >> .config
 
 	# may change the .config file further
 	make olddefconfig
