@@ -78,42 +78,6 @@ def update_linux_vanilla():
     print("%s: %s updated." % (myName, targetFile))
 
 
-def update_linux_bcachefs():
-    myName = "linux/bcachefs"
-    selfDir = os.path.dirname(os.path.realpath(__file__))
-    url = "https://evilpiepirate.org"
-
-    # get version from internet
-    ver, href = util.getNewestVersionFromHyperlinks(myName, url + "/git/bcachefs.git", "v([0-9\\.]+)")
-    assert ver is not None
-
-    # get commit name
-    commitName = None
-    if True:
-        root = util.fetchAndParseHtmlPage(myName, url + href)
-        for atag in root.xpath(".//a"):
-            m = re.fullmatch(".*\\?h=v([0-9\\.]+)&id=(\\S+)", atag.get("href"))
-            if m is not None:
-                assert m.group(1) == ver
-                commitName = m.group(2)
-    assert commitName is not None
-
-    # modify version: 5.13 -> 5.13.0
-    if util.countChar(ver, ".") < 2:
-        ver += ".0"
-
-    # rename bbki file
-    targetFile = os.path.join(myName, "%s.bbki" % (ver))
-    util.renameTo(os.path.join(selfDir, targetFile))
-
-    # change SRC_URI
-    remoteFile = "https://github.com/koverstreet/bcachefs/archive/%s.zip" % (commitName)
-    util.sed(targetFile, "SRC_URI=.*", "SRC_URI=\"%s -> bcachefs-kernel-%s.zip\"" % (remoteFile, ver))
-
-    # print result
-    print("%s: %s updated." % (myName, targetFile))
-
-
 def update_linux_addon_linux_firmware():
     myName = "linux-addon/linux-firmware"
     selfDir = os.path.dirname(os.path.realpath(__file__))
@@ -405,7 +369,6 @@ class util:
 
 if __name__ == "__main__":
     update_linux_vanilla()
-    update_linux_bcachefs()
     update_linux_addon_linux_firmware()
     update_linux_addon_virtualbox_modules()
     update_linux_addon_wireless_regdb()
