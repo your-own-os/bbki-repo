@@ -17,50 +17,110 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <glob.h>
 #include <errno.h>
-#include "lvm2app.h"
+#include <c-list.h>
+#include <uuid/uuid.h>
 
 
-static char * partitions[1024] = {NULL};
-static char * uuids[1024] = {NULL};
-static int max_parti = -1;
+UUID_DEFINE(BCACHE_MAGIC, 0xf6, 0x73, 0x85, 0xc6, 0x1a, 0x4e, 0xca, 0x45, 0x82, 0x65, 0xf5, 0x7f, 0x48, 0xba, 0x6d, 0x81);
+
+struct bcachefs_sb {
+    unsigned char csum[16];
+    unsigned char version[2];
+    unsigned char version_min[2];
+    unsigned char pad[4];
+    uuid_t       magic;
+    uuid_t       uuid;
+    uuid_t       user_uuid;
+    unsigned char label[32];
+};
+
+typedef struct uuid_map {
+    CList link;
+    uuid_t uu;
+    char devpath[PATH_MAX];
+};
+
+static CList uuid_map_list;
 
 
-static char *get_bcachefs_uuid(const char *devpath) {
 
+static int readline(const char *path, int fd, int line_no, char *buf, int buflen)
+{
+    int i;
+    for (i = 0; i < buflen; i++) {
+        int rc = read(fd, &buf[i], 1);
+        if (rc < 0) {
+            fprintf(stderr, "bcachefs-mount: error reading line %d of %s", line_no, path);
+            return -2;
+        }
+        if (rc == 0) {
+            buf[i] = '\0';
+            return i;
+        }
+        if (buf[i] == '\n') {
+            buf[i] = '\0';
+            return i;
+        }
+    }
+    fprintf(stderr, "bcachefs-mount: error line %d of %s is too long", line_no, path);
+    return -1;
+}
+
+static char *get_bcachefs_uuid(const char *path, uuid_t uu)
+{
+    struct bcachefs_sb sb;
+    int fp;
+
+    fp = open(path);
+    if (fp == NULL) {
+        fprintf(stderr, "bcachefs-mount: error opening device %s", path);
+        return NULL;
+    }
+
+    if (read(fp, &sb, sizeof(sb)) != sizeof(sb)) {
+        fprintf(stderr, "bcachefs-mount: error reading device %s", path);
+        close(fp);
+        return NULL;
+    }
+
+    close(fp);
+
+	if (uuid_compare(sb.magic, BCACHE_MAGIC) != 0) {
+        /* not a bcachefs filesystem, that's ok */
+        return NULL;
+    }
+
+
+
+
+    return NULL;
 }
 
 static int parse() {
+    const char *path = "/proc/partitions";
+    struct uuid_map *node;
     int fd;
-    char line[4096];
-    int i, j;
+    int i;
 
-    max_parti = 0;
-    fd = open("/proc/partitions");
+    c_list_init(&uuid_map_list);
+
+    fd = open(path);
     for (i = 0; ; i++) {
+        char line[4096];
+        int rc;
         char *p;
 
-        /* read line into variable "line" */
-        for (j = 0; j < 4096; j++) {
-            int rc = read(fd, &line[j], 1);
-            if (rc < 0) {
-                fprintf(stderr, "bcachefs-mount: error reading line %d of /proc/partitions", i + 1);
-                close(fd);
-                return 1;
-            }
-            if (rc == 0) {
-                close(fd);
-                return 0;
-            }
-            if (line[j] == '\n') {
-                break;
-            }
-        }
-        if (j == 4096) {
-            fprintf(stderr, "bcachefs-mount: line %d of /proc/partitions is too long", i + 1);
+        /* read line */
+        rc = readline(path, fd, i + 1, line, 4096);
+        if (rc < 0) {
             close(fd);
-            return 1;
+            return rc;
+        }
+        if (rc == 0 && eof(fd)) {
+            break;
         }
 
         /* jump over the first two lines */
@@ -73,31 +133,38 @@ static int parse() {
         if (p == NULL) {
             fprintf(stderr, "bcachefs-mount: error parsing /proc/partitions");
             close(fd);
-            return 1;
+            return -1;
         }
         p++;
 
-        /* add a device path and bcachefs uuid */
-        if (max_parti >= 1024) {
-            fprintf(stderr, "bcachefs-mount: too many partitions in /proc/partitions");
-            close(fd);
-            return 1;
-        }
-        partitions[max_parti] = (char*)malloc(strlen(p) + 1);
-        strcpy(partitions[max_parti], "/dev/");
-        strcat(partitions[max_parti], p);
-        uuids[max_parti] = get_bcachefs_uuid(partitions[max_parti]);
+        node = malloc(sizeof(*node));
+        c_list_init(&node->link);
 
-        max_parti++;
+        strcpy(node->devpath, "/dev/");
+        strcat(node->devpath, p);
+
+        rc = get_bcachefs_uuid(node->devpath, node->uu);
+        if (rc < 0) {
+            free(node);
+            close(fd);
+            return rc;
+        }
+        if (rc == 0) {
+            /* no bcachefs uuid found */
+            free(node);
+            continue;
+        }
+
+        c_list_link_tail(&uuid_map_list, &node->link);
     }
+
+    close(fd);
+    return 0;
 }
 
 int main(int argc, char **argv) {
-    char *uuidList;
-    char *mntPoint;
     char devices[16384] = "";
-    char *pu, *pd;
-    int i;
+    char *uuidList, *mntPoint, *pu;
 
     /* arguments */
     if (argc < 3) {
@@ -107,43 +174,57 @@ int main(int argc, char **argv) {
     uuidList = argv[1];
     mntPoint = argv[2];
 
-    /* parse /proc/partitions and get bcachefs uuid */
-    if (parse() == NULL) {
+    /* argument check */
+    if (uuidList[0] == 0) {
+        fprintf(stderr, "bcachefs-mount: invalid uuid-list parameter\n");
+        return 1;
+    }
+    if (mntPoint[0] == 0) {
+        fprintf(stderr, "bcachefs-mount: invalid mount-point parameter\n");
         return 1;
     }
 
-    pu = uuidList;
-    pd = devices;
-    while (1) {
-        char *pu2 = strchr(pu, ':');
-        if ((pu2 != NULL && strlen(pu) != 36) || (pu2 == NULL && strlen(pu) != 36)) {
-            fprintf(stderr, "bcachefs-mount: invalid UUID found\n");
-            return 1;
-        }
-
-        for (i = 0; i < max_parti; i++) {
-            if (uuids[i] != NULL && strncmp(pu, uuids[i], 36) == 0) {
-                strcat(pd, partitions[i]);
-                strcat(pd, ":");
-                break;
-            }
-        }
-        if (i == max_parti) {
-            fprintf(stderr, "bcachefs-mount: UUID %s not found\n");
-            return 1;
-        }
-
-        if (pu2 == NULL) {
-            break;
-        }
+    /* parse /proc/partitions and get bcachefs uuids */
+    if (parse()) {
+        return 1;
     }
 
+    /* fill variable devices according to uuidList */
+    pu = uuidList;
+    while (pu != '\0') {
+        size_t devices_len = strlen(devices);
+        uuid_t uu;
+        char *pu2;
+        struct uuid_map *node;
 
+        if (*pu == ':') pu++;
+        pu2 = strchr(pu, ':');
+        pu2 = (pu2 != NULL) ? pu2 : (pu + strlen(pu));
 
+        if (uuid_parse_range(pu, pu2 - 1, uu)) {
+            fprintf(stderr, "bcachefs-mount: invalid UUID \"%.*s\" found\n", pu2 - pu, pu);
+            return 1;
+        }
 
+        c_list_for_each_entry(node, &uuid_map_list, link) {
+            if (uuid_compare(node->uu, uu) == 0) {
+                strcat(devices, node->devpath);
+                strcat(devices, ":");
+            }
+        }
 
-    if (mount(device, mntPoint, "bcachefs", 0, "")) {
-        fprintf(stderr, "mount: error %d mounting %s\n", errno, "bcachefs");
+        if (devices_len == strlen(devices)) {
+            fprintf(stderr, "bcachefs-mount: no device found for UUID \"%.*s\"\n", pu2 - pu, pu);
+            return 1;
+        }
+
+        pu = pu2;
+    }
+
+    devices[strlen(devices) - 1] = '\0';
+
+    if (mount(devices, mntPoint, "bcachefs", 0, "")) {
+        fprintf(stderr, "bcachefs-mount: error %d mounting %s\n", errno, "bcachefs");
         return 1;
     }
 
