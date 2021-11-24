@@ -37,7 +37,7 @@ struct bcachefs_sb {
     unsigned char label[32];
 };
 
-typedef struct uuid_map {
+struct uuid_map {
     CList link;
     uuid_t uu;
     char devpath[PATH_MAX];
@@ -162,7 +162,8 @@ static int parse() {
     return 0;
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     char devices[16384] = "";
     char *uuidList, *mntPoint, *pu;
 
