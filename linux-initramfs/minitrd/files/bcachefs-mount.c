@@ -46,14 +46,13 @@ struct uuid_map {
 static CList uuid_map_list;
 
 
-
-static int readline(const char *path, int fd, int line_no, char *buf, int buflen)
+static int read_line(const char *path, int fd, int line_no, char *buf, int buflen)
 {
     int i;
     for (i = 0; i < buflen; i++) {
         int rc = read(fd, &buf[i], 1);
         if (rc < 0) {
-            fprintf(stderr, "bcachefs-mount: error reading line %d of %s", line_no, path);
+            fprintf(stderr, "bcachefs-mount: error occured when reading line %d of %s", line_no, path);
             return -2;
         }
         if (rc == 0) {
@@ -65,38 +64,57 @@ static int readline(const char *path, int fd, int line_no, char *buf, int buflen
             return i;
         }
     }
-    fprintf(stderr, "bcachefs-mount: error line %d of %s is too long", line_no, path);
+    fprintf(stderr, "bcachefs-mount: line %d of %s is too long", line_no, path);
     return -1;
+}
+
+static int read_buf(const char *path, int fd, int offset, char *buf, int buflen)
+{
+    if (lseek(fd, offset, SEEK_SET) < 0) {
+        fprintf(stderr, "bcachefs-mount: error occured when seeking device %s", path);
+        return -1;
+    }
+
+    if (read(fd, buf, buflen) != buflen) {
+        fprintf(stderr, "bcachefs-mount: error reading device %s", path);
+        return -1;
+    }
+
+    return 0;
 }
 
 static char *get_bcachefs_uuid(const char *path, uuid_t uu)
 {
     struct bcachefs_sb sb;
-    int fp;
+    int fd;
 
-    fp = open(path);
-    if (fp == NULL) {
-        fprintf(stderr, "bcachefs-mount: error opening device %s", path);
-        return NULL;
+    fd = open(path);
+    if (fd == 0) {
+        fprintf(stderr, "bcachefs-mount: error %d when opening device %s", errno, path);
+        return -1;
     }
 
-    if (read(fp, &sb, sizeof(sb)) != sizeof(sb)) {
-        fprintf(stderr, "bcachefs-mount: error reading device %s", path);
-        close(fp);
-        return NULL;
+    /* read magic and compare */
+    rc = read_buf(path, fd, 24, uu, sizeof(*uu));
+    if (rc != 0) {
+        close(fd);
+        return rc;
     }
-
-    close(fp);
-
-	if (uuid_compare(sb.magic, BCACHE_MAGIC) != 0) {
+	if (uuid_compare(uu, BCACHE_MAGIC) != 0) {
         /* not a bcachefs filesystem, that's ok */
-        return NULL;
+        close(fd);
+        return 1;
     }
 
+    /* read uuid */
+    rc = read_buf(path, fd, 40, uu, sizeof(*uu));
+    if (rc != 0) {
+        close(fd);
+        return rc;
+    }
 
-
-
-    return NULL;
+    close(fd);
+    return 0;
 }
 
 static int parse() {
@@ -114,7 +132,7 @@ static int parse() {
         char *p;
 
         /* read line */
-        rc = readline(path, fd, i + 1, line, 4096);
+        rc = read_line(path, fd, i + 1, line, 4096);
         if (rc < 0) {
             close(fd);
             return rc;
@@ -149,7 +167,7 @@ static int parse() {
             close(fd);
             return rc;
         }
-        if (rc == 0) {
+        if (rc > 0) {
             /* no bcachefs uuid found */
             free(node);
             continue;
