@@ -205,11 +205,7 @@ char * getArg(char * cmd, char * end, char ** arg) {
     return cmd;
 }
 
-#ifdef __powerpc__
-#define CMDLINESIZE 256
-#else
 #define CMDLINESIZE 1024
-#endif
 
 /* get the contents of the kernel command line from /proc/cmdline */
 static char * getKernelCmdLine(void) {
@@ -1363,6 +1359,33 @@ int bcacheActivateBackingDeviceCommand(char * cmd, char *end) {
     return 0;
 }
 
+int bcachefsMountCommand(char * cmd, char *end) {
+    char * uuidList;
+    char * mntPoint;
+
+    if (!(cmd = getArg(cmd, end, &uuidList))) {
+        fprintf(stderr, "bcachefs-mount: missing uuid-list\n");
+        return 1;
+    }
+
+    if (!(cmd = getArg(cmd, end, &mntPoint))) {
+        fprintf(stderr, "bcachefs-mount: missing mount-point\n");
+        return 1;
+    }
+
+    if (cmd < end) {
+        fprintf(stderr, "bcachefs-mount: unexpected arguments\n");
+        return 1;
+    }
+
+    if (runBinary2("/usr/sbin/bcachefs-mount", uuidList, mntPoint) != 0) {
+        /* callee prints error message */
+        return 1;
+    }
+
+    return 0;
+}
+
 int findlodevCommand(char * cmd, char * end) {
     char devName[20];
     int devNum;
@@ -1502,6 +1525,9 @@ int runStartup() {
         }
         else if (COMMAND_COMPARE("bcache-backing-device-activate", start, chptr)) {
             rc = bcacheActivateBackingDeviceCommand(chptr, end);
+        }
+        else if (COMMAND_COMPARE("bcachefs-mount", start, chptr)) {
+            rc = bcachefsMountCommand(chptr, end);
         }
         else {
             *chptr = '\0';
