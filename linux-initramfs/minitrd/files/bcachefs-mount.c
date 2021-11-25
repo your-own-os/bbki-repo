@@ -26,17 +26,6 @@
 
 UUID_DEFINE(BCACHE_MAGIC, 0xf6, 0x73, 0x85, 0xc6, 0x1a, 0x4e, 0xca, 0x45, 0x82, 0x65, 0xf5, 0x7f, 0x48, 0xba, 0x6d, 0x81);
 
-struct bcachefs_sb {
-    unsigned char csum[16];
-    unsigned char version[2];
-    unsigned char version_min[2];
-    unsigned char pad[4];
-    uuid_t       magic;
-    uuid_t       uuid;
-    uuid_t       user_uuid;
-    unsigned char label[32];
-};
-
 struct uuid_map {
     CList link;
     uuid_t uu;
@@ -85,7 +74,6 @@ static int read_buf(const char *path, int fd, int offset, char *buf, int buflen)
 
 static char *get_bcachefs_uuid(const char *path, uuid_t uu)
 {
-    struct bcachefs_sb sb;
     int fd;
 
     fd = open(path);
@@ -95,10 +83,9 @@ static char *get_bcachefs_uuid(const char *path, uuid_t uu)
     }
 
     /* read magic and compare */
-    rc = read_buf(path, fd, 24, uu, sizeof(*uu));
-    if (rc != 0) {
+    if (read_buf(path, fd, 24, uu, sizeof(*uu))) {
         close(fd);
-        return rc;
+        return -1;
     }
 	if (uuid_compare(uu, BCACHE_MAGIC) != 0) {
         /* not a bcachefs filesystem, that's ok */
@@ -107,10 +94,9 @@ static char *get_bcachefs_uuid(const char *path, uuid_t uu)
     }
 
     /* read uuid */
-    rc = read_buf(path, fd, 40, uu, sizeof(*uu));
-    if (rc != 0) {
+    if (read_buf(path, fd, 40, uu, sizeof(*uu))) {
         close(fd);
-        return rc;
+        return -1;
     }
 
     close(fd);
