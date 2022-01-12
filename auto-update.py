@@ -255,21 +255,23 @@ class util:
 
     @staticmethod
     def fetchJsonData(myName, url):
-        try:
-            with urllib.request.urlopen(url, timeout=robust_layer.TIMEOUT) as resp:
-                return json.loads(resp.read().decode("utf-8"))
-        except OSError as e:
-            print("%s: Failed to acces %s, %s" % (myName, url, e))
-            time.sleep(robust_layer.RETRY_WAIT)
+        while True:
+            try:
+                with urllib.request.urlopen(url, timeout=robust_layer.TIMEOUT) as resp:
+                    return json.loads(resp.read().decode("utf-8"))
+            except OSError as e:
+                print("%s: Failed to acces %s, %s" % (myName, url, e))
+                time.sleep(robust_layer.RETRY_WAIT)
 
     @staticmethod
     def fetchHtmlBinaryData(myName, url):
-        try:
-            with urllib.request.urlopen(url, timeout=robust_layer.TIMEOUT) as resp:
-                return resp.read()
-        except OSError as e:
-            print("%s: Failed to acces %s, %s" % (myName, url, e))
-            time.sleep(robust_layer.RETRY_WAIT)
+        while True:
+            try:
+                with urllib.request.urlopen(url, timeout=robust_layer.TIMEOUT) as resp:
+                    return resp.read()
+            except OSError as e:
+                print("%s: Failed to acces %s, %s" % (myName, url, e))
+                time.sleep(robust_layer.RETRY_WAIT)
 
     @staticmethod
     def fetchAndParseHtmlPage(myName, url):

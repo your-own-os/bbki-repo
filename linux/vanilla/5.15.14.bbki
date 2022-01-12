@@ -4,9 +4,9 @@
 DESCRIPTION="Linux kernel"
 HOMEPAGE="https://www.kernel.org"
 <<<<<<< HEAD:linux/vanilla/5.15.3.bbki
-SRC_URI="https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.15.4.tar.xz"
+SRC_URI="https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.15.14.tar.xz"
 =======
-SRC_URI="https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.15.4.tar.xz"
+SRC_URI="https://www.kernel.org/pub/linux/kernel/v5.x/linux-5.15.14.tar.xz"
 >>>>>>> d4751c2 (fix):linux/vanilla/5.15.4.bbki
 
 src_unpack() {
