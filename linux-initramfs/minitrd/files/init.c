@@ -485,7 +485,6 @@ int mountCommand(char * cmd, char * end) {
     char * fsType = NULL;
     char * device;
     char * mntPoint;
-    char * deviceDir = NULL;
     char * options = NULL;
     int rc = 0;
     int flags = MS_MGC_VAL;
