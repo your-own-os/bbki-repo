@@ -15,10 +15,15 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 #include <dirent.h>
 #include <errno.h>
 #include <c-list.h>
+#include <sys/mount.h>
+#include <blkid/blkid.h>
 #include <uuid/uuid.h>
 
 
@@ -33,18 +38,19 @@ struct uuid_map {
 static CList uuid_map_list;
 
 
-static int read_line(const char *path, int fd, int line_no, char *buf, int buflen)
+static int read_line(const char *path, FILE *fp, int line_no, char *buf, int buflen)
 {
     int i;
     for (i = 0; i < buflen; i++) {
-        int rc = read(fd, &buf[i], 1);
-        if (rc < 0) {
-            fprintf(stderr, "bcachefs-mount: error occured when reading line %d of %s", line_no, path);
-            return -2;
-        }
+        size_t rc = fread(&buf[i], 1, 1, fp);
         if (rc == 0) {
-            buf[i] = '\0';
-            return i;
+            if (feof(fp)) {
+                buf[i] = '\0';
+                return i;
+            } else {
+                fprintf(stderr, "bcachefs-mount: error occured when reading line %d of %s", line_no, path);
+                return -2;
+            }
         }
         if (buf[i] == '\n') {
             buf[i] = '\0';
@@ -70,11 +76,11 @@ static int read_buf(const char *path, int fd, int offset, char *buf, int buflen)
     return 0;
 }
 
-static char *get_bcachefs_uuid(const char *path, uuid_t uu)
+static int get_bcachefs_uuid(const char *path, uuid_t uu)
 {
     int fd;
 
-    fd = open(path);
+    fd = open(path, O_RDONLY, 0);
     if (fd == 0) {
         fprintf(stderr, "bcachefs-mount: error %d when opening device %s", errno, path);
         return -1;
@@ -104,24 +110,24 @@ static char *get_bcachefs_uuid(const char *path, uuid_t uu)
 static int parse() {
     const char *path = "/proc/partitions";
     struct uuid_map *node;
-    int fd;
+    FILE *fp;
     int i;
 
     c_list_init(&uuid_map_list);
 
-    fd = open(path);
+    fp = fopen(path, "r");
     for (i = 0; ; i++) {
         char line[4096];
         int rc;
         char *p;
 
         /* read line */
-        rc = read_line(path, fd, i + 1, line, 4096);
+        rc = read_line(path, fp, i + 1, line, 4096);
         if (rc < 0) {
-            close(fd);
+            fclose(fp);
             return rc;
         }
-        if (rc == 0 && eof(fd)) {
+        if (feof(fp)) {
             break;
         }
 
@@ -134,7 +140,7 @@ static int parse() {
         p = strrchr(line, ' ');
         if (p == NULL) {
             fprintf(stderr, "bcachefs-mount: error parsing /proc/partitions");
-            close(fd);
+            fclose(fp);
             return -1;
         }
         p++;
@@ -148,7 +154,7 @@ static int parse() {
         rc = get_bcachefs_uuid(node->devpath, node->uu);
         if (rc < 0) {
             free(node);
-            close(fd);
+            fclose(fp);
             return rc;
         }
         if (rc > 0) {
@@ -160,7 +166,7 @@ static int parse() {
         c_list_link_tail(&uuid_map_list, &node->link);
     }
 
-    close(fd);
+    fclose(fp);
     return 0;
 }
 
@@ -194,7 +200,7 @@ int main(int argc, char **argv)
 
     /* fill variable devices according to uuidList */
     pu = uuidList;
-    while (pu != '\0') {
+    while (*pu != '\0') {
         size_t devices_len = strlen(devices);
         uuid_t uu;
         char *pu2;
@@ -204,8 +210,8 @@ int main(int argc, char **argv)
         pu2 = strchr(pu, ':');
         pu2 = (pu2 != NULL) ? pu2 : (pu + strlen(pu));
 
-        if (uuid_parse_range(pu, pu2 - 1, uu)) {
-            fprintf(stderr, "bcachefs-mount: invalid UUID \"%.*s\" found\n", pu2 - pu, pu);
+        if (uuid_parse_range(pu, pu2, uu)) {
+            fprintf(stderr, "bcachefs-mount: invalid UUID \"%.*s\" found\n", (int)(pu2 - pu), pu);
             return 1;
         }
 
@@ -217,7 +223,7 @@ int main(int argc, char **argv)
         }
 
         if (devices_len == strlen(devices)) {
-            fprintf(stderr, "bcachefs-mount: no device found for UUID \"%.*s\"\n", pu2 - pu, pu);
+            fprintf(stderr, "bcachefs-mount: no device found for UUID \"%.*s\"\n", (int)(pu2 - pu), pu);
             return 1;
         }
 
