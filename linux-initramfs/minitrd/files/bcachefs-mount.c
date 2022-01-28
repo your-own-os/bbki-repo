@@ -27,7 +27,10 @@
 #include <uuid/uuid.h>
 
 
-UUID_DEFINE(BCACHE_MAGIC, 0xf6, 0x73, 0x85, 0xc6, 0x1a, 0x4e, 0xca, 0x45, 0x82, 0x65, 0xf5, 0x7f, 0x48, 0xba, 0x6d, 0x81);
+/*UUID_DEFINE(BCACHE_MAGIC, 0xf6, 0x73, 0x85, 0xc6, 0x1a, 0x4e, 0xca, 0x45, 0x82, 0x65, 0xf5, 0x7f, 0x48, 0xba, 0x6d, 0x81);*/
+
+UUID_DEFINE(BCACHE_MAGIC, 0xc6, 0x85, 0x73, 0xf6, 0x4e, 0x1a, 0x45, 0xca, 0x82, 0x65, 0xf5, 0x7f, 0x48, 0xba, 0x6d, 0x81);
+
 
 struct uuid_map {
     CList link;
@@ -151,7 +154,7 @@ static int parse() {
         strcpy(node->devpath, "/dev/");
         strcat(node->devpath, p);
 
-        printf("debug1: %s", node->devpath);
+        printf("debug1: %s\n", node->devpath);
 
         rc = get_bcachefs_uuid(node->devpath, node->uu);
         if (rc < 0) {
@@ -166,7 +169,7 @@ static int parse() {
         }
 
         c_list_link_tail(&uuid_map_list, &node->link);
-        printf("debug2: %s", node->devpath);
+        printf("debug2: %s\n", node->devpath);
     }
 
     fclose(fp);
