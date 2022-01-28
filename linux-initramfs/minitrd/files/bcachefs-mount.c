@@ -151,6 +151,8 @@ static int parse() {
         strcpy(node->devpath, "/dev/");
         strcat(node->devpath, p);
 
+        printf("debug1: %s", node->devpath);
+
         rc = get_bcachefs_uuid(node->devpath, node->uu);
         if (rc < 0) {
             free(node);
@@ -164,7 +166,7 @@ static int parse() {
         }
 
         c_list_link_tail(&uuid_map_list, &node->link);
-        printf("%s", node->devpath);
+        printf("debug2: %s", node->devpath);
     }
 
     fclose(fp);
