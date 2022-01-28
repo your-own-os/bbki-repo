@@ -164,6 +164,7 @@ static int parse() {
         }
 
         c_list_link_tail(&uuid_map_list, &node->link);
+        printf("%s", node->devpath);
     }
 
     fclose(fp);
