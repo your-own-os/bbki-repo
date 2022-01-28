@@ -86,10 +86,6 @@
  * umount path
  * Unmounts the filesystem mounted at path.
  *
- * lvm-lv-activate uuid vgname lvname
- * Activate the LVM2 logical volume specified by vgname and lvname. The logical
- * volume must have an UUID that is specifed by uuid.
- * 
  * bcache-cache-device-activate dev-uuid
  * Activate the cache device for bcache, the device is specified by dev-uuid.
  * 
@@ -1216,41 +1212,6 @@ readlinkout:
     return rc;
 }
 
-int lvmlvactivateCommand(char * cmd, char * end) {
-    char * uuid;
-    char * vgname;
-    char * lvname;
-
-    if (!(cmd = getArg(cmd, end, &uuid))) {
-        fprintf(stderr, "lvm-lv-activate: missing uuid\n");
-        return 1;
-    }
-
-    if (!(cmd = getArg(cmd, end, &vgname))) {
-        fprintf(stderr, "lvm-lv-activate: missing vgname\n");
-        return 1;
-    }
-
-    if (!(cmd = getArg(cmd, end, &lvname))) {
-        fprintf(stderr, "lvm-lv-activate: missing lvname\n");
-        return 1;
-    }
-
-    if (cmd < end) {
-        fprintf(stderr, "lvm-lv-activate: unexpected arguments\n");
-        return 1;
-    }
-
-    if (runBinary2("/usr/sbin/lvm-lv-activate", vgname, lvname) != 0) {
-        /* callee prints error message */
-        return 1;
-    }
-
-    waitForUuid(uuid);
-
-    return 0;
-}
-
 int bcacheActivateCacheDeviceCommand(char * cmd, char *end) {
     char * bcacheRegisterFile;
     char * devuuid;
@@ -1483,9 +1444,6 @@ int runStartup() {
         }
         else if (COMMAND_COMPARE("readlink", start, chptr)) {
             rc = readlinkCommand(chptr, end);
-        }
-        else if (COMMAND_COMPARE("lvm-lv-activate", start, chptr)) {
-            rc = lvmlvactivateCommand(chptr, end);
         }
         else if (COMMAND_COMPARE("bcache-cache-device-activate", start, chptr)) {
             rc = bcacheActivateCacheDeviceCommand(chptr, end);
