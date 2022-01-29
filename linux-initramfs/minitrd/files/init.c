@@ -52,14 +52,6 @@
  * will not complain if the directory exists. Note this is a subset of the
  * standard mkdir -p behavior.
  * 
- * mkrootdev path
- * Makes "path" a block inode for the device which should be mounted
- * as root. To determine this device init uses 
- * the device suggested by the root= kernel command line argument (if
- * root=LABEL is used devices are probed to find one with that label). If
- * no root= argument is available, /proc/sys/kernel/real-root-dev provides
- * the device number.
- * 
  * mount -o opts -t type device mntpoint
  * Mounts a filesystem. It does not support NFS, and it must be used in
  * the form given above (arguments must go first).  If "device" is of the form
