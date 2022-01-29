@@ -600,7 +600,7 @@ int mountCommand(char * cmd, char * end) {
         while (*start) {
             char * key = NULL;
 
-            end = strchr(start, ":");
+            end = strchr(start, ':');
             if (!end) {
                 end = start + strlen(start);
             } else {
