@@ -60,14 +60,13 @@
  * no root= argument is available, /proc/sys/kernel/real-root-dev provides
  * the device number.
  * 
- * mount [--ro] -o opts -t type device mntpoint
+ * mount -o opts -t type device mntpoint
  * Mounts a filesystem. It does not support NFS, and it must be used in
  * the form given above (arguments must go first).  If "device" is of the form
  * LABEL=foo the devices listed in /proc/partitions will
  * be searched, and the first device with a volume label of "foo" will
- * be mounted. Normal mount(2) options are supported, and --ro will
- * mount the filesystem read only for compatibility with older versions of init.
- * The defaults mount option is silently ignored.
+ * be mounted. Normal mount(2) options are supported.  The defaults mount
+ * option is silently ignored.
  * 
  * readlink path
  * Displays the value of the symbolic link "path".
@@ -85,6 +84,10 @@
  * 
  * umount path
  * Unmounts the filesystem mounted at path.
+ *
+ * lvm-lv-activate uuid vgname lvname
+ * Activate the LVM2 logical volume specified by vgname and lvname. The logical
+ * volume must have an UUID that is specifed by uuid.
  *
  * bcache-cache-device-activate dev-uuid
  * Activate the cache device for bcache, the device is specified by dev-uuid.
@@ -488,14 +491,12 @@ int mountCommand(char * cmd, char * end) {
 
     cmd = getArg(cmd, end, &device);
     if (!cmd) {
-        fprintf(stderr, "usage: mount [--ro] [-o <opts>] -t <type> <device> <mntpoint>\n");
+        fprintf(stderr, "usage: mount [-o <opts>] -t <type> <device> <mntpoint>\n");
         return 1;
     }
 
     while (cmd && *device == '-') {
-        if (!strcmp(device, "--ro")) {
-            flags |= MS_RDONLY;
-        } else if (!strcmp(device, "--bind")) {
+        if (!strcmp(device, "--bind")) {
             flags = MS_BIND;
             fsType = "none";
         } else if (!strcmp(device, "-o")) {
@@ -1210,6 +1211,41 @@ readlinkout:
     free(respath);
     free(fullpath);
     return rc;
+}
+
+int lvmlvactivateCommand(char * cmd, char * end) {
+    char * uuid;
+    char * vgname;
+    char * lvname;
+
+    if (!(cmd = getArg(cmd, end, &uuid))) {
+        fprintf(stderr, "lvm-lv-activate: missing uuid\n");
+        return 1;
+    }
+
+    if (!(cmd = getArg(cmd, end, &vgname))) {
+        fprintf(stderr, "lvm-lv-activate: missing vgname\n");
+        return 1;
+    }
+
+    if (!(cmd = getArg(cmd, end, &lvname))) {
+        fprintf(stderr, "lvm-lv-activate: missing lvname\n");
+        return 1;
+    }
+
+    if (cmd < end) {
+        fprintf(stderr, "lvm-lv-activate: unexpected arguments\n");
+        return 1;
+    }
+
+    if (runBinary2("/usr/sbin/lvm-lv-activate", vgname, lvname) != 0) {
+        /* callee prints error message */
+        return 1;
+    }
+
+    waitForUuid(uuid);
+
+    return 0;
 }
 
 int bcacheActivateCacheDeviceCommand(char * cmd, char *end) {
