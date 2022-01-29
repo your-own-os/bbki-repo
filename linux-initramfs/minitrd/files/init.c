@@ -639,7 +639,11 @@ int mountCommand(char * cmd, char * end) {
 
             start = end;
         }
-        *(p - 1) = '\0';
+        if (p > device) {
+            *(p - 1) = '\0';
+        } else {
+            *p = '\0';
+        }
     }
 
     if (testing) {
