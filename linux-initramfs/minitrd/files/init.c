@@ -529,8 +529,8 @@ int mountCommand(char * cmd, char * end) {
 
     /* need to deal with options */ 
     if (options) {
-        char * end;
         char * start = options;
+        char * end;
 
         newOpts = alloca(strlen(options) + 1);
         *newOpts = '\0';
@@ -590,20 +590,56 @@ int mountCommand(char * cmd, char * end) {
         options = newOpts;
     }
 
-    if (!strncmp("LABEL=", device, 6)) {
-        char * devName = blkid_evaluate_tag("LABEL", device + 6, &mycache);
-        if (devName == NULL) {
-            fprintf(stderr, "mount: failed to get device by LABEL %s\n", device + 6);
-            return 1;
+    if (*device != '/' || strchr(device, ':')) {
+        char * start = device;
+        char * end;
+        char * p;
+
+        device = (char *)malloc(strlen(device) + 1);
+        p = device;
+        while (*start) {
+            char * key = NULL;
+
+            end = strchr(start, ":");
+            if (!end) {
+                end = start + strlen(start);
+            } else {
+                *end = '\0';
+                end++;
+            }
+
+            if (!strncmp("LABEL=", start, 6)) {
+                key = "LABEL";
+            } else if (!strncmp("UUID=", start, 5)) {
+                key = "UUID";
+            } else if (!strncmp("PARTUUID=", start, 9)) {
+                key = "PARTUUID";
+            }
+
+            if (key) {
+                char * devName = blkid_evaluate_tag(key, start + strlen(key) + 1, &mycache);
+                if (devName == NULL) {
+                    fprintf(stderr, "mount: failed to get device by %s %s\n", key, start + strlen(key) + 1);
+                    return 1;
+                }
+                if (strlen(devName) > strlen(start)) {
+                    fprintf(stderr, "mount: device name %s is too long\n", devName);
+                    free(devName);
+                    return 1;
+                }
+                strcpy(p, devName);
+                p += strlen(devName);
+                free(devName);
+            } else {
+                strcpy(p, start);
+                p += strlen(start);
+            }
+            *p = ':';
+            p++;
+
+            start = end;
         }
-        device = devName;
-    } else if (!strncmp("UUID=", device, 5)) {
-        char * devName = blkid_evaluate_tag("UUID", device + 5, &mycache);
-        if (devName == NULL) {
-            fprintf(stderr, "mount: failed to get device by UUID %s\n", device + 5);
-            return 1;
-        }
-        device = devName;
+        *(p - 1) = '\0';
     }
 
     if (testing) {
