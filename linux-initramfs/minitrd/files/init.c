@@ -1270,7 +1270,7 @@ int lvmlvactivateCommand(char * cmd, char * end) {
         return 1;
     }
 
-    if (runBinary2("/usr/sbin/lvm-lv-activate", vgname, lvname) != 0) {
+    if (runBinary2("/sbin/lvm", "vgchange", "-ay") != 0) {
         /* callee prints error message */
         return 1;
     }
