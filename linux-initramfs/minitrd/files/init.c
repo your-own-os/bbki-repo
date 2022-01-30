@@ -98,6 +98,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <c-list.h>
 #include <sys/ioctl.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
@@ -472,14 +473,142 @@ static int runBinary4(const char *bin, const char *arg1, const char *arg2, const
     return runBinaryImpl(bin, argArray, 4);
 }
 
+int _implMountConvertOptions(char * cmd_name, char * options, int * pflags, char * buf, int buf_len) {
+    char * start = options;
+    char * end;
+
+    while (*start) {
+        end = strchr(start, ',');
+        if (!end) {
+            end = start + strlen(start);
+        } else {
+            *end = '\0';
+            end++;
+        }
+
+        if (!strcmp(start, "ro"))
+            *pflags |= MS_RDONLY;
+        else if (!strcmp(start, "rw"))
+            *pflags &= ~MS_RDONLY;
+        else if (!strcmp(start, "nosuid"))
+            *pflags |= MS_NOSUID;
+        else if (!strcmp(start, "suid"))
+            *pflags &= ~MS_NOSUID;
+        else if (!strcmp(start, "nodev"))
+            *pflags |= MS_NODEV;
+        else if (!strcmp(start, "dev"))
+            *pflags &= ~MS_NODEV;
+        else if (!strcmp(start, "noexec"))
+            *pflags |= MS_NOEXEC;
+        else if (!strcmp(start, "exec"))
+            *pflags &= ~MS_NOEXEC;
+        else if (!strcmp(start, "sync"))
+            *pflags |= MS_SYNCHRONOUS;
+        else if (!strcmp(start, "async"))
+            *pflags &= ~MS_SYNCHRONOUS;
+        else if (!strcmp(start, "nodiratime"))
+            *pflags |= MS_NODIRATIME;
+        else if (!strcmp(start, "diratime"))
+            *pflags &= ~MS_NODIRATIME;
+        else if (!strcmp(start, "noatime"))
+            *pflags |= MS_NOATIME;
+        else if (!strcmp(start, "atime"))
+            *pflags &= ~MS_NOATIME;
+        else if (!strcmp(start, "strictatime"))
+            *pflags |= MS_STRICTATIME;
+        else if (!strcmp(start, "remount"))
+            *pflags |= MS_REMOUNT;
+        else if (!strcmp(start, "defaults"))
+            ;
+        else {
+            if (*buf) {
+                if (strlen(buf) + 1 + strlen(start) + 1 > buf_len) {
+                    fprintf(stderr, "%s: converted options are too long\n", cmd_name);
+                    return 1;
+                }
+                strcat(buf, ",");
+                strcat(buf, start);
+            } else {
+                if (strlen(buf) + strlen(start) + 1 > buf_len) {
+                    fprintf(stderr, "%s: converted options are too long\n", cmd_name);
+                    return 1;
+                }
+                strcat(buf, start);
+            }
+        }
+
+        start = end;
+    }
+
+    return 0;
+}
+
+int _implMountConvertDevice(char * cmd_name, char * device, char * buf, int buf_len) {
+    char * key;
+
+    if (!strncmp("LABEL=", device, 6)) {
+        key = "LABEL";
+    } else if (!strncmp("UUID=", device, 5)) {
+        key = "UUID";
+    } else if (!strncmp("PARTUUID=", device, 9)) {
+        key = "PARTUUID";
+    } else {
+        key = NULL;
+    }
+
+    if (key != NULL) {
+        char * inName = device + strlen(key) + 1;
+        char * devName = blkid_evaluate_tag(key, inName, &mycache);
+        if (devName == NULL) {
+            fprintf(stderr, "%s: failed to get device specified by %s\n", cmd_name, device);
+            return 1;
+        }
+        if (strlen(devName) + 1 > buf_len) {
+            fprintf(stderr, "%s: converted device name %s for %s is too long\n", cmd_name, devName, inName);
+            free(devName);
+            return 1;
+        }
+        strcpy(buf, devName);
+        free(devName);
+    } else {
+        if (strlen(device) + 1 > buf_len) {
+            fprintf(stderr, "%s: out buffer for device %s is too small\n", cmd_name, device);
+            return 1;
+        }
+        strcpy(buf, device);
+    }
+
+    return 0;
+}
+
+int _implDoMount(char * fsType, char * options, int flags, char * device, char * mntPoint) {
+    if (testing) {
+        printf("mount -o '%s' -t '%s' '%s' '%s'%s%s%s%s%s%s%s\n", 
+            options, fsType, device, mntPoint,
+            (flags & MS_RDONLY) ? " +ro" : "",
+            (flags & MS_NOSUID) ? " +nosuid " : "",
+            (flags & MS_NODEV) ? " +nodev " : "",
+            (flags & MS_NOEXEC) ? " +noexec " : "",
+            (flags & MS_SYNCHRONOUS) ? " +sync " : "",
+            (flags & MS_REMOUNT) ? " +remount " : "",
+            (flags & MS_NOATIME) ? " +noatime " : ""
+        );
+    } else {
+        if (mount(device, mntPoint, fsType, flags, options)) {
+            fprintf(stderr, "mount: error %d mounting %s (%s)\n", errno, device, fsType);
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 int mountCommand(char * cmd, char * end) {
     char * fsType = NULL;
     char * device;
     char * mntPoint;
     char * options = NULL;
-    int rc = 0;
     int flags = MS_MGC_VAL;
-    char * newOpts;
 
     cmd = getArg(cmd, end, &device);
     if (!cmd) {
@@ -529,145 +658,156 @@ int mountCommand(char * cmd, char * end) {
 
     /* need to deal with options */ 
     if (options) {
-        char * start = options;
-        char * end;
-
-        newOpts = alloca(strlen(options) + 1);
+        char * newOpts = alloca(strlen(options) + 1);
         *newOpts = '\0';
-
-        while (*start) {
-            end = strchr(start, ',');
-            if (!end) {
-                end = start + strlen(start);
-            } else {
-                *end = '\0';
-                end++;
-            }
-
-            if (!strcmp(start, "ro"))
-                flags |= MS_RDONLY;
-            else if (!strcmp(start, "rw"))
-                flags &= ~MS_RDONLY;
-            else if (!strcmp(start, "nosuid"))
-                flags |= MS_NOSUID;
-            else if (!strcmp(start, "suid"))
-                flags &= ~MS_NOSUID;
-            else if (!strcmp(start, "nodev"))
-                flags |= MS_NODEV;
-            else if (!strcmp(start, "dev"))
-                flags &= ~MS_NODEV;
-            else if (!strcmp(start, "noexec"))
-                flags |= MS_NOEXEC;
-            else if (!strcmp(start, "exec"))
-                flags &= ~MS_NOEXEC;
-            else if (!strcmp(start, "sync"))
-                flags |= MS_SYNCHRONOUS;
-            else if (!strcmp(start, "async"))
-                flags &= ~MS_SYNCHRONOUS;
-            else if (!strcmp(start, "nodiratime"))
-                flags |= MS_NODIRATIME;
-            else if (!strcmp(start, "diratime"))
-                flags &= ~MS_NODIRATIME;
-            else if (!strcmp(start, "noatime"))
-                flags |= MS_NOATIME;
-            else if (!strcmp(start, "atime"))
-                flags &= ~MS_NOATIME;
-            else if (!strcmp(start, "strictatime"))
-                flags |= MS_STRICTATIME;
-            else if (!strcmp(start, "remount"))
-                flags |= MS_REMOUNT;
-            else if (!strcmp(start, "defaults"))
-                ;
-            else {
-                if (*newOpts)
-                    strcat(newOpts, ",");
-                strcat(newOpts, start);
-            }
-
-            start = end;
+        if (_implMountConvertOptions("mount", options, &flags, newOpts, strlen(options) + 1)) {
+            /* callee prints error message */
+            return 1;
         }
-
         options = newOpts;
     }
 
-    if (*device != '/' || strchr(device, ':')) {
-        char * start = device;
-        char * end;
-        char * p;
-
-        device = (char *)malloc(strlen(device) + 1);
-        p = device;
-        while (*start) {
-            char * key = NULL;
-
-            end = strchr(start, ':');
-            if (!end) {
-                end = start + strlen(start);
-            } else {
-                *end = '\0';
-                end++;
-            }
-
-            if (!strncmp("LABEL=", start, 6)) {
-                key = "LABEL";
-            } else if (!strncmp("UUID=", start, 5)) {
-                key = "UUID";
-            } else if (!strncmp("PARTUUID=", start, 9)) {
-                key = "PARTUUID";
-            }
-
-            if (key) {
-                char * devName = blkid_evaluate_tag(key, start + strlen(key) + 1, &mycache);
-                if (devName == NULL) {
-                    fprintf(stderr, "mount: failed to get device by %s %s\n", key, start + strlen(key) + 1);
-                    return 1;
-                }
-                if (strlen(devName) > strlen(start)) {
-                    fprintf(stderr, "mount: device name %s is too long\n", devName);
-                    free(devName);
-                    return 1;
-                }
-                strcpy(p, devName);
-                p += strlen(devName);
-                free(devName);
-            } else {
-                strcpy(p, start);
-                p += strlen(start);
-            }
-            *p = ':';
-            p++;
-
-            start = end;
+    if (*device != '/') {
+        char * newDevice = alloca(strlen(device) + 1);
+        *newDevice = '\0';
+        if (_implMountConvertDevice("mount", device, newDevice, strlen(device) + 1)) {
+            /* callee prints error message */
+            return 1;
         }
-        if (p > device) {
-            *(p - 1) = '\0';
-        } else {
-            *p = '\0';
-        }
+        device = newDevice;
     }
 
-    if (testing) {
-        printf("mount %s%s%s-t '%s' '%s' '%s' (%s%s%s%s%s%s%s)\n", 
-            options ? "-o '" : "",    
-            options ? options : "",    
-            options ? "\' " : "",    
-            fsType, device, mntPoint,
-            (flags & MS_RDONLY) ? "ro " : "",
-            (flags & MS_NOSUID) ? "nosuid " : "",
-            (flags & MS_NODEV) ? "nodev " : "",
-            (flags & MS_NOEXEC) ? "noexec " : "",
-            (flags & MS_SYNCHRONOUS) ? "sync " : "",
-            (flags & MS_REMOUNT) ? "remount " : "",
-            (flags & MS_NOATIME) ? "noatime " : ""
-            );
-    } else {
-        if (mount(device, mntPoint, fsType, flags, options)) {
-            fprintf(stderr, "mount: error %d mounting %s\n", errno, fsType);
-            rc = 1;
-        }
+    if (_implDoMount(fsType, options, flags, device, mntPoint)) {
+        /* callee prints error message */
+        return 1;
     }
 
-    return rc;
+    return 0;
+}
+
+int mountBtrfsCommand(char * cmd, char * end) {
+    char * usage = "usage: mount-btrfs <mntpoint> <opts> <device1> [device2...]";
+    char * mntPoint;
+    char * options;
+    char realOptions[4096] = "";
+    int flags = MS_MGC_VAL;
+    char * lastDev = NULL;
+    int i;
+
+    /* parse <mntpoint> */
+    cmd = getArg(cmd, end, &mntPoint);
+    if (!cmd) {
+        fprintf(stderr, "%s\n", usage);
+        return 1;
+    }
+
+    /* parse <opts> */
+    cmd = getArg(cmd, end, &options);
+    if (!cmd) {
+        fprintf(stderr, "%s\n", usage);
+        return 1;
+    }
+    if (_implMountConvertOptions("mount-btrfs", options, &flags, realOptions, 4096)) {
+        /* callee prints error message */
+        return 1;
+    }
+
+    /* parse <device1> <device2> ... */
+    for (i = 0; cmd < end; i++) {
+        char * prefix = (*realOptions ? ",device=" : "device=");
+        char * device;
+
+        cmd = getArg(cmd, end, &device);
+        if (!cmd) {
+            fprintf(stderr, "mount-btrfs: failed to parse device %d\n", i + 1);
+            return 1;
+        }
+
+        if (strlen(realOptions) + strlen(prefix) + 1 > 4096) {
+            fprintf(stderr, "mount-btrfs: options are too long\n");
+            return 1;
+        }
+        strcat(realOptions, prefix);
+
+        lastDev = realOptions + strlen(realOptions);
+        if (_implMountConvertDevice("mount-btrfs", device, lastDev, 4096 - (lastDev - realOptions))) {
+            /* callee prints error message */
+            return 1;
+        }
+    }
+    if (i == 0) {
+        fprintf(stderr, "%s\n", usage);
+        return 1;
+    }
+
+    if (_implDoMount("btrfs", realOptions, flags, lastDev, mntPoint)) {
+        /* callee prints error message */
+        return 1;
+    }
+
+    return 0;
+}
+
+int mountBcachefsCommand(char * cmd, char * end) {
+    char * usage = "usage: mount-bcachefs <mntpoint> <opts> <device1> [device2...]";
+    char * mntPoint;
+    char * options;
+    char realOptions[4096] = "";
+    char realDevices[4096] = "";
+    int flags = MS_MGC_VAL;
+    int i;
+
+    /* parse <mntpoint> */
+    cmd = getArg(cmd, end, &mntPoint);
+    if (!cmd) {
+        fprintf(stderr, "%s\n", usage);
+        return 1;
+    }
+
+    /* parse <opts> */
+    cmd = getArg(cmd, end, &options);
+    if (!cmd) {
+        fprintf(stderr, "%s\n", usage);
+        return 1;
+    }
+    if (_implMountConvertOptions("mount-bcachefs", options, &flags, realOptions, 4096)) {
+        /* callee prints error message */
+        return 1;
+    }
+
+    /* parse <device1> <device2> ... */
+    for (i = 0; cmd < end; i++) {
+        char * prefix = (*realDevices ? "," : "");
+        char * device;
+
+        cmd = getArg(cmd, end, &device);
+        if (!cmd) {
+            fprintf(stderr, "mount-bcachefs: failed to parse device %d\n", i + 1);
+            return 1;
+        }
+
+        if (strlen(realDevices) + strlen(prefix) + 1 > 4096) {
+            fprintf(stderr, "mount-bcachefs: options are too long\n");
+            return 1;
+        }
+        strcat(realDevices, prefix);
+
+        if (_implMountConvertDevice("mount-bcachefs", device, realDevices + strlen(realDevices), 4096 - strlen(realDevices))) {
+            /* callee prints error message */
+            return 1;
+        }
+    }
+    if (i == 0) {
+        fprintf(stderr, "%s\n", usage);
+        return 1;
+    }
+
+    if (_implDoMount("bcachefs", realOptions, flags, realDevices, mntPoint)) {
+        /* callee prints error message */
+        return 1;
+    }
+
+    return 0;
 }
 
 int otherCommand(char * bin, char * cmd, char * end, int doFork) {
@@ -1482,6 +1622,9 @@ int runStartup() {
         /* execute command */
         if (COMMAND_COMPARE("mount", start, chptr)) {
             rc = mountCommand(chptr, end);
+        }
+        else if (COMMAND_COMPARE("mount-btrfs", start, chptr)) {
+            rc = mountBtrfsCommand(chptr, end);
         }
         else if (COMMAND_COMPARE("losetup", start, chptr)) {
             rc = losetupCommand(chptr, end);
