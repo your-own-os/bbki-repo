@@ -60,11 +60,14 @@
  * be mounted. Normal mount(2) options are supported.  The defaults mount
  * option is silently ignored.
  * 
+ * mount-btrfs mntpoint opts device1 [device2...]
+ * Mounts a btrfs filesystem. User can specify multiple devices.
+ *
+ * mount-bcachefs mntpoint opts device1 [device2...]
+ * Mounts a bcachefs filesystem. User can specify multiple devices.
+ *
  * readlink path
  * Displays the value of the symbolic link "path".
- * 
- * setquiet
- * Cause any later echos in this script to not be displayed.
  * 
  * sleep num
  * Sleep for num seconds
@@ -98,7 +101,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <c-list.h>
 #include <sys/ioctl.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
@@ -111,7 +113,6 @@
 #include <linux/loop.h>
 #include <linux/cdrom.h>
 #include <linux/major.h>
-#include <linux/raid/md_u.h>
 #include <blkid/blkid.h>
 
 #define MAX(a, b) ((a) > (b) ? a : b)
@@ -969,53 +970,6 @@ int losetupCommand(char * cmd, char * end) {
     return 0;
 }
 
-#define RAID_MAJOR 9
-int raidautorunCommand(char * cmd, char * end) {
-    char * device;
-    int fd;
-
-    if (!(cmd = getArg(cmd, end, &device))) {
-    fprintf(stderr, "raidautorun: raid device expected as first argument\n");
-    return 1;
-    }
-
-    if (cmd < end) {
-    fprintf(stderr, "raidautorun: unexpected arguments\n");
-    return 1;
-    }
-
-    /* with udev, the raid devices don't exist until they get started.
-     * this won't work so well with raidautorun.  so, let's be smart
-     * and create them ourselves if we need to */
-    if (access(device, R_OK & W_OK)) {
-        int minor;
-        if (sscanf(device, "/dev/md%d", &minor) != 1) {
-            fprintf(stderr, "raidautorun: unable to autocreate %s\n", device);
-            return 1;
-        }
-
-        if (smartmknod(device, S_IFBLK | 0600, makedev(RAID_MAJOR, minor))) {
-            fprintf(stderr, "raidautorun: unable to autocreate %s\n", device);
-            return 1;
-        }
-    }
-
-    fd = open(device, O_RDWR, 0);
-    if (fd < 0) {
-        fprintf(stderr, "raidautorun: failed to open %s: %d\n", device, errno);
-        return 1;
-    }
-
-    if (ioctl(fd, RAID_AUTORUN, 0)) {
-        fprintf(stderr, "raidautorun: RAID_AUTORUN failed: %d\n", errno);
-        close(fd);
-        return 1;
-    }
-
-    close(fd);
-    return 0;
-}
-
 #define MAX_INIT_ARGS 32
 /* This is based on code from util-linux/sys-utils/run_init.c */
 int switchrootCommand(char * cmd, char * end) {
@@ -1626,14 +1580,14 @@ int runStartup() {
         else if (COMMAND_COMPARE("mount-btrfs", start, chptr)) {
             rc = mountBtrfsCommand(chptr, end);
         }
+        else if (COMMAND_COMPARE("mount-bcachefs", start, chptr)) {
+            rc = mountBcachefsCommand(chptr, end);
+        }
         else if (COMMAND_COMPARE("losetup", start, chptr)) {
             rc = losetupCommand(chptr, end);
         }
         else if (COMMAND_COMPARE("echo", start, chptr)) {
             rc = echoCommand(chptr, end);
-        }
-        else if (COMMAND_COMPARE("raidautorun", start, chptr)) {
-            rc = raidautorunCommand(chptr, end);
         }
         else if (COMMAND_COMPARE("switchroot", start, chptr)) {
             rc = switchrootCommand(chptr, end);
