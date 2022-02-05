@@ -512,6 +512,8 @@ int _implMountConvertOptions(char * cmd_name, char * options, int * pflags, char
             *pflags |= MS_STRICTATIME;
         else if (!strcmp(start, "remount"))
             *pflags |= MS_REMOUNT;
+        else if (!strcmp(start, "relatime"))
+            *pflags |= MS_RELATIME;
         else if (!strcmp(start, "defaults"))
             ;
         else {
