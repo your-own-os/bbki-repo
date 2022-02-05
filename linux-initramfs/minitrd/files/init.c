@@ -510,10 +510,10 @@ int _implMountConvertOptions(char * cmd_name, char * options, int * pflags, char
             *pflags &= ~MS_NOATIME;
         else if (!strcmp(start, "strictatime"))
             *pflags |= MS_STRICTATIME;
-        else if (!strcmp(start, "remount"))
-            *pflags |= MS_REMOUNT;
         else if (!strcmp(start, "relatime"))
             *pflags |= MS_RELATIME;
+        else if (!strcmp(start, "remount"))
+            *pflags |= MS_REMOUNT;
         else if (!strcmp(start, "defaults"))
             ;
         else {
@@ -579,7 +579,7 @@ int _implMountConvertDevice(char * cmd_name, char * device, char * buf, int buf_
 
 int _implDoMount(char * fsType, char * options, int flags, char * device, char * mntPoint) {
     if (testing) {
-        printf("mount -o '%s' -t '%s' '%s' '%s'%s%s%s%s%s%s%s\n", 
+        printf("mount -o '%s' -t '%s' '%s' '%s'%s%s%s%s%s%s%s%s%s\n",
             options, fsType, device, mntPoint,
             (flags & MS_RDONLY) ? " +ro" : "",
             (flags & MS_NOSUID) ? " +nosuid " : "",
@@ -587,7 +587,9 @@ int _implDoMount(char * fsType, char * options, int flags, char * device, char *
             (flags & MS_NOEXEC) ? " +noexec " : "",
             (flags & MS_SYNCHRONOUS) ? " +sync " : "",
             (flags & MS_REMOUNT) ? " +remount " : "",
-            (flags & MS_NOATIME) ? " +noatime " : ""
+            (flags & MS_NOATIME) ? " +noatime " : "",
+            (flags & MS_STRICTATIME) ? " +strictatime": "",
+            (flags & MS_RELATIME) ? " +relatime " : ""
         );
     } else {
         if (mount(device, mntPoint, fsType, flags, options)) {
