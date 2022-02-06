@@ -54,17 +54,18 @@
  * 
  * mount -o opts -t type device mntpoint
  * Mounts a filesystem. It does not support NFS, and it must be used in
- * the form given above (arguments must go first).  If "device" is of the form
- * LABEL=foo the devices listed in /proc/partitions will
- * be searched, and the first device with a volume label of "foo" will
- * be mounted. Normal mount(2) options are supported.  The defaults mount
- * option is silently ignored.
+ * the form given above (arguments must go first).  If "device" is of the
+ * form dev-tag (LABEL=xxx or UUID=xxx or UUID_SUB=xxx), it will be
+ * searched through libblkid. Normal mount(2) options are supported.
+ * The defaults mount option is silently ignored.
  * 
  * mount-btrfs mntpoint opts device1 [device2...]
- * Mounts a btrfs filesystem. User can specify multiple devices.
+ * Mounts a btrfs filesystem. User can specify multiple devices. Devices
+ * can be specified in the dev-tag form.
  *
  * mount-bcachefs mntpoint opts device1 [device2...]
- * Mounts a bcachefs filesystem. User can specify multiple devices.
+ * Mounts a bcachefs filesystem. User can specify multiple devices. Devices
+ * can be specified in the dev-tag form.
  *
  * readlink path
  * Displays the value of the symbolic link "path".
@@ -80,16 +81,17 @@
  * umount path
  * Unmounts the filesystem mounted at path.
  *
- * lvm-lv-activate uuid vgname lvname
- * Activate the LVM2 logical volume specified by vgname and lvname. The logical
- * volume must have an UUID that is specifed by uuid.
+ * lvm-lv-activate dev-tag vg-name lv-name
+ * Activate the LVM2 logical volume specified by vg-name and lv-name. The logical
+ * volume must have a tag (LABEL=xxx or UUID=xxx or UUID_SUB=xxx) that is
+ * specifed by dev-tag.
  *
- * bcache-cache-device-activate dev-uuid
- * Activate the cache device for bcache, the device is specified by dev-uuid.
+ * bcache-cache-device-activate device
+ * Activate the cache device for bcache.
  * 
- * bcache-backing-device-activate uuid dev-uuid
- * Activate the backing device for bcache, the device is specified by dev-uuid. The
- * bcache device must have an UUID that is specified by uuid
+ * bcache-backing-device-activate dev-tag device
+ * Activate the backing device for bcache. The bcache device must have a tag
+ * (LABEL=xxx or UUID=xxx or UUID_SUB=xxx) that is specified by dev-tag
  */
 
 #include <ctype.h>
@@ -127,25 +129,28 @@ char * env[] = {
 
 #define STARTUPRC "startup.rc"
 
-int smartmknod(const char * device, mode_t mode, dev_t dev) {
-    char buf[256];
-    char * end;
+const char * parseDevTag(const char * in, const char ** p_value) {
+    const char * token;
 
-    strncpy(buf, device, 256);
-
-    end = buf;
-    while (*end != '\0') {
-        if (*end == '/') {
-            *end = '\0';
-            if (access(buf, F_OK) != 0 && errno == ENOENT) 
-                mkdir(buf, 0755);
-            *end = '/';
-        }
-
-        end++;
+    if (!strncmp("LABEL=", in, strlen("LABEL="))) {
+        token = "LABEL";
+    } else if (!strncmp("UUID=", in, strlen("UUID="))) {
+        token = "UUID";
+    } else if (!strncmp("UUID_SUB=", in, strlen("UUID_SUB="))) {
+        token = "UUID_SUB";
+    } else {
+        token = NULL;
     }
 
-    return mknod(device, mode, dev);
+    if (p_value != NULL) {
+        if (token != NULL) {
+            *p_value = in + strlen(token) + 1;
+        } else {
+            *p_value = NULL;
+        }
+    }
+
+    return token;
 }
 
 char * getArg(char * cmd, char * end, char ** arg) {
@@ -273,11 +278,20 @@ static char * getKernelArg(char * arg) {
     return NULL;
 }
 
-static void waitForUuid(const char *uuid) {
+void waitForDev(const char *device) {
+    const char * token;
+    const char * value;
+
+    token = parseDevTag(device, &value);
     do {
-        char * devName = blkid_evaluate_tag("UUID", uuid, &mycache);
-        if (devName != NULL) {
-            break;
+        if (token != NULL) {
+            if (blkid_evaluate_tag(token, value, &mycache) != NULL) {
+                break;
+            }
+        } else {
+            if (!access(device, F_OK)) {
+                break;
+            }
         }
         (void)sleep(1);
     } while(1);
@@ -540,27 +554,18 @@ int _implMountConvertOptions(char * cmd_name, char * options, int * pflags, char
 }
 
 int _implMountConvertDevice(char * cmd_name, char * device, char * buf, int buf_len) {
-    char * key;
+    const char * token;
+    const char * value;
 
-    if (!strncmp("LABEL=", device, strlen("LABEL="))) {
-        key = "LABEL";
-    } else if (!strncmp("UUID=", device, strlen("UUID="))) {
-        key = "UUID";
-    } else if (!strncmp("UUID_SUB=", device, strlen("UUID_SUB="))) {
-        key = "UUID_SUB";
-    } else {
-        key = NULL;
-    }
-
-    if (key != NULL) {
-        char * inName = device + strlen(key) + 1;
-        char * devName = blkid_evaluate_tag(key, inName, &mycache);
+    token = parseDevTag(device, &value);
+    if (token != NULL) {
+        char * devName = blkid_evaluate_tag(token, value, &mycache);
         if (devName == NULL) {
             fprintf(stderr, "%s: failed to get device specified by %s\n", cmd_name, device);
             return 1;
         }
         if (strlen(devName) + 1 > buf_len) {
-            fprintf(stderr, "%s: converted device name %s for %s is too long\n", cmd_name, devName, inName);
+            fprintf(stderr, "%s: converted device name %s for %s is too long\n", cmd_name, devName, value);
             free(devName);
             return 1;
         }
@@ -1336,22 +1341,26 @@ readlinkout:
     return rc;
 }
 
-int lvmlvactivateCommand(char * cmd, char * end) {
-    char * uuid;
-    char * vgname;
-    char * lvname;
+int lvmLvActivateCommand(char * cmd, char * end) {
+    char * dev_tag;
+    char * vg_name;
+    char * lv_name;
 
-    if (!(cmd = getArg(cmd, end, &uuid))) {
-        fprintf(stderr, "lvm-lv-activate: missing uuid\n");
+    if (!(cmd = getArg(cmd, end, &dev_tag))) {
+        fprintf(stderr, "lvm-lv-activate: missing dev-tag\n");
+        return 1;
+    }
+    if (parseDevTag(dev_tag, NULL) == NULL) {
+        fprintf(stderr, "lvm-lv-activate: invalid dev-tag\n");
         return 1;
     }
 
-    if (!(cmd = getArg(cmd, end, &vgname))) {
+    if (!(cmd = getArg(cmd, end, &vg_name))) {
         fprintf(stderr, "lvm-lv-activate: missing vgname\n");
         return 1;
     }
 
-    if (!(cmd = getArg(cmd, end, &lvname))) {
+    if (!(cmd = getArg(cmd, end, &lv_name))) {
         fprintf(stderr, "lvm-lv-activate: missing lvname\n");
         return 1;
     }
@@ -1366,16 +1375,16 @@ int lvmlvactivateCommand(char * cmd, char * end) {
         return 1;
     }
 
-    waitForUuid(uuid);
+    waitForDev(dev_tag);
 
     return 0;
 }
 
 int bcacheActivateCacheDeviceCommand(char * cmd, char *end) {
     char * bcacheRegisterFile;
-    char * devuuid;
     char * device;
-    int fd;
+    const char * token;
+    const char * value;
 
     if (!quiet) {
         bcacheRegisterFile = "/sys/fs/bcache/register";
@@ -1383,8 +1392,8 @@ int bcacheActivateCacheDeviceCommand(char * cmd, char *end) {
         bcacheRegisterFile = "/sys/fs/bcache/register_quiet";
     }
 
-    if (!(cmd = getArg(cmd, end, &devuuid))) {
-        fprintf(stderr, "bcache-cache-device-activate: missing devuuid\n");
+    if (!(cmd = getArg(cmd, end, &device))) {
+        fprintf(stderr, "bcache-cache-device-activate: missing device\n");
         return 1;
     }
 
@@ -1393,14 +1402,18 @@ int bcacheActivateCacheDeviceCommand(char * cmd, char *end) {
         return 1;
     }
 
-    device = blkid_evaluate_tag("UUID", devuuid, &mycache);
-    if (device == NULL) {
-        fprintf(stderr, "bcache-cache-device-activate: failed to get device by UUID %s\n", devuuid);
-        return 1;
+    token = parseDevTag(device, &value);
+    if (token != NULL) {
+        char * devName = blkid_evaluate_tag(token, value, &mycache);
+        if (devName == NULL) {
+            fprintf(stderr, "bcache-cache-device-activate: failed to get device %s\n", device);
+            return 1;
+        }
+        device = devName;
     }
 
     if (!testing) {
-        fd = open(bcacheRegisterFile, O_WRONLY, 0);
+        int fd = open(bcacheRegisterFile, O_WRONLY, 0);
         if (fd < 0) {
             fprintf(stderr, "bcache-cache-device-activate: failed to open %s: %d\n", bcacheRegisterFile, errno);
             return 1;
@@ -1420,10 +1433,10 @@ int bcacheActivateCacheDeviceCommand(char * cmd, char *end) {
 
 int bcacheActivateBackingDeviceCommand(char * cmd, char *end) {
     char * bcacheRegisterFile;
-    char * uuid;
-    char * devuuid;
+    char * dev_tag;
     char * device;
-    int fd;
+    const char * token;
+    const char * value;
 
     if (!quiet) {
         bcacheRegisterFile = "/sys/fs/bcache/register";
@@ -1431,13 +1444,13 @@ int bcacheActivateBackingDeviceCommand(char * cmd, char *end) {
         bcacheRegisterFile = "/sys/fs/bcache/register_quiet";
     }
 
-    if (!(cmd = getArg(cmd, end, &uuid))) {
-        fprintf(stderr, "bcache-backing-device-activate: missing uuid\n");
+    if (!(cmd = getArg(cmd, end, &dev_tag))) {
+        fprintf(stderr, "bcache-backing-device-activate: missing dev-tag\n");
         return 1;
     }
 
-    if (!(cmd = getArg(cmd, end, &devuuid))) {
-        fprintf(stderr, "bcache-backing-device-activate: missing devuuid\n");
+    if (!(cmd = getArg(cmd, end, &device))) {
+        fprintf(stderr, "bcache-backing-device-activate: missing device\n");
         return 1;
     }
 
@@ -1446,14 +1459,23 @@ int bcacheActivateBackingDeviceCommand(char * cmd, char *end) {
         return 1;
     }
 
-    device = blkid_evaluate_tag("UUID", devuuid, &mycache);
-    if (device == NULL) {
-        fprintf(stderr, "bcache-backing-device-activate: failed to get device by UUID %s\n", devuuid);
+    if (parseDevTag(dev_tag, NULL) == NULL) {
+        fprintf(stderr, "bcache-backing-device-activate: invalid dev-tag\n");
         return 1;
     }
 
+    token = parseDevTag(device, &value);
+    if (token != NULL) {
+        char * devName = blkid_evaluate_tag(token, value, &mycache);
+        if (devName == NULL) {
+            fprintf(stderr, "bcache-backing-device-activate: failed to get device %s\n", device);
+            return 1;
+        }
+        device = devName;
+    }
+
     if (!testing) {
-        fd = open(bcacheRegisterFile, O_WRONLY, 0);
+        int fd = open(bcacheRegisterFile, O_WRONLY, 0);
         if (fd < 0) {
             fprintf(stderr, "bcache-backing-device-activate: failed to open %s: %d\n", bcacheRegisterFile, errno);
             return 1;
@@ -1468,7 +1490,7 @@ int bcacheActivateBackingDeviceCommand(char * cmd, char *end) {
         close(fd);
     }
 
-    waitForUuid(uuid);
+    waitForDev(dev_tag);
 
     return 0;
 }
