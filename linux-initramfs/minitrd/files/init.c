@@ -542,12 +542,12 @@ int _implMountConvertOptions(char * cmd_name, char * options, int * pflags, char
 int _implMountConvertDevice(char * cmd_name, char * device, char * buf, int buf_len) {
     char * key;
 
-    if (!strncmp("LABEL=", device, 6)) {
+    if (!strncmp("LABEL=", device, strlen("LABEL="))) {
         key = "LABEL";
-    } else if (!strncmp("UUID=", device, 5)) {
+    } else if (!strncmp("UUID=", device, strlen("UUID="))) {
         key = "UUID";
-    } else if (!strncmp("PARTUUID=", device, 9)) {
-        key = "PARTUUID";
+    } else if (!strncmp("UUID_SUB=", device, strlen("UUID_SUB="))) {
+        key = "UUID_SUB";
     } else {
         key = NULL;
     }
