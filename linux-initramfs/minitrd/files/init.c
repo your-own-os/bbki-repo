@@ -52,6 +52,9 @@
  * will not complain if the directory exists. Note this is a subset of the
  * standard mkdir -p behavior.
  * 
+ * insmod file
+ * Insert a module into the kernel.
+ *
  * mount -o opts -t type device mntpoint
  * Mounts a filesystem. It does not support NFS, and it must be used in
  * the form given above (arguments must go first).  If "device" is of the
@@ -103,12 +106,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <libkmod.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
 #include <sys/wait.h>
 #include <linux/loop.h>
 #include <blkid/blkid.h>
+
 
 #define MAX(a, b) ((a) > (b) ? a : b)
 
@@ -479,6 +484,68 @@ static int runBinary4(const char *bin, const char *arg1, const char *arg2, const
     argArray[2] = arg3;
     argArray[3] = arg4;
     return runBinaryImpl(bin, argArray, 4);
+}
+
+int insmodCommand(char * cmd, char * end) {
+    const char * null_config = NULL;
+    char * filename;
+    struct kmod_ctx * ctx;
+    struct kmod_module * mod;
+    int err;
+
+    if (!(cmd = getArg(cmd, end, &filename))) {
+        fprintf(stderr, "insmod: missing file\n");
+        return 1;
+    }
+
+    if (cmd < end) {
+        fprintf(stderr, "insmod: unexpected arguments\n");
+        return 1;
+    }
+
+    ctx = kmod_new(NULL, &null_config);
+    if (!ctx) {
+        fprintf(stderr, "insmod: kmod_new() failed\n");
+        return 1;
+    }
+
+    err = kmod_module_new_from_path(ctx, filename, &mod);
+    if (err < 0) {
+        fprintf(stderr, "insmod: could not load module %s: %s\n", filename, strerror(-err));
+        kmod_unref(ctx);
+        return 1;
+    }
+
+    err = kmod_module_insert_module(mod, 0, "");
+    if (err < 0) {
+        char *err_str;
+        switch (-err) {
+            case ENOEXEC:
+                err_str = "invalid module format";
+                break;
+            case ENOENT:
+                err_str = "unknown symbol in module";
+                break;
+            case ESRCH:
+                err_str = "module has wrong symbol version";
+                break;
+            case EINVAL:
+                err_str = "invalid parameters";
+                break;
+            default:
+                err_str = strerror(err);
+                break;
+        }
+
+        fprintf(stderr, "insmod: could not insert module %s: %s\n", filename, err_str);
+        kmod_module_unref(mod);
+        kmod_unref(ctx);
+        return 1;
+    }
+
+    kmod_module_unref(mod);
+    kmod_unref(ctx);
+    return 0;
 }
 
 int _implMountConvertOptions(char * cmd_name, char * options, int * pflags, char * buf, int buf_len) {
@@ -1593,7 +1660,10 @@ int runStartup() {
         }
 
         /* execute command */
-        if (COMMAND_COMPARE("mount", start, chptr)) {
+        if (COMMAND_COMPARE("insmod", start, chptr)) {
+            rc = insmodCommand(chptr, end);
+        }
+        else if (COMMAND_COMPARE("mount", start, chptr)) {
             rc = mountCommand(chptr, end);
         }
         else if (COMMAND_COMPARE("mount-btrfs", start, chptr)) {
